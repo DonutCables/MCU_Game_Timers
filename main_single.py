@@ -6,29 +6,27 @@ import time
 from lcd import LCD
 from i2c_pcf8574_interface import I2CPCF8574Interface
 
+# I2C LCD assignments
 lcd_i2c = busio.I2C(board.GP1, board.GP0)
 pcf_interface = I2CPCF8574Interface(lcd_i2c, 0x27)
 lcd = LCD(pcf_interface, num_rows=2, num_cols=16)
 
 # Initialize rotary encoder and buttons
-encoder = rotaryio.IncrementalEncoder(board.GP2, board.GP3)
-last_position = encoder.position
-
-ENC = digitalio.DigitalInOut(board.GP4)
-RED = digitalio.DigitalInOut(board.GP5)
-BLUE = digitalio.DigitalInOut(board.GP6)
+iopins = (board.GP2, board.GP3,board.GP4, board.GP5, board.GP6)
+encoder = rotaryio.IncrementalEncoder(iopins[0], iopins[1])
+last_position = None
+ENC, RED, BLUE = (digitalio.DigitalInOut(pin) for pin in iopins[2:5])
 for button in [ENC, RED, BLUE]:
-    button.direction = digitalio.Direction.INPUT
-    button.pull = digitalio.Pull.UP
-
-# Define menu options and corresponding program names
-menu_options = ["KotH", "Attrition", "Death Clicks"]
-menu_option_index = 0
+    button.switch_to_input(digitalio.Pull.UP)
 
 # Function to manage LCD messages
 def display_message(message):
     lcd.clear()
     lcd.print(message)
+
+# Define menu options and corresponding program names
+menu_options = ["KotH", "Attrition", "Death Clicks"]
+menu_option_index = 0
 
 # Function to fetch timer string from game length
 def timer_string(game_length):

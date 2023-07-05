@@ -17,11 +17,9 @@ last_position = encoder.position
 ENC = digitalio.DigitalInOut(board.GP4)
 RED = digitalio.DigitalInOut(board.GP5)
 BLUE = digitalio.DigitalInOut(board.GP6)
-INPUT = digitalio.Direction.INPUT
-PULLUP = digitalio.Pull.UP
 for button in [ENC, RED, BLUE]:
-    button.direction = INPUT
-    button.pull = PULLUP
+    button.direction = digitalio.Direction.INPUT
+    button.pull = digitalio.Pull.UP
 
 # Define menu options and corresponding program names
 menu_options = ["KotH", "Attrition", "Death Clicks"]
@@ -40,11 +38,13 @@ def timer_string(game_length):
 def scroll_menu(direction):
     global menu_option_index
     if direction == "down":
+        print("down")
         menu_option_index += 1
         if menu_option_index == len(menu_options):
             menu_option_index = 0
     elif direction == "up":
         menu_option_index -= 1
+        print("up")
         if menu_option_index < 0:
             menu_option_index = len(menu_options)-1
     display_message(f"Select a game:\n{menu_options[menu_option_index]}")

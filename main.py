@@ -32,7 +32,7 @@ def timer_string(game_length):
 # Main menu for scrolling game options
 def main_menu():
     global position, last_position
-    led_control()
+    led_control("main menu")
     display_message("You're a nerd")
     time.sleep(.5)
     display_message(f"Select a game:\n{MENU_OPTIONS[menu_option_index]}")
@@ -124,11 +124,11 @@ def team_screen(game_mode):
     while True:
         if not RED.value:
             team = "Red"
-            led_control()
+            led_control("red team")
             display_message(f"{game_mode}\nTeam {team}")
         if not BLUE.value:
             team = "Blue"
-            led_control()
+            led_control("blue team")
             display_message(f"{game_mode}\nTeam {team}")
         if not ENC.value:
             break
@@ -169,10 +169,10 @@ def start_koth_timer():
     red_timer_started = False
     blue_timer_started = False
     display_message(f"RED: {timer_string(game_length)}\nBLUE: {timer_string(game_length)}")
-    led_control()
+    led_control("koth timer ready")
     time.sleep(1)
     while True:
-        if ~ RED.value | ~ BLUE.value:
+        if not RED.value or not BLUE.value:
             break
     while True:
         if red_timer_started:            
@@ -181,18 +181,18 @@ def start_koth_timer():
         elif blue_timer_started:                  
             blue_time -= 1
             blue_time_str = timer_string(blue_time)
-        if ~RED.value & ~red_timer_started:
+        if not RED.value or not red_timer_started:
             red_timer_started = True
             blue_timer_started = False
-            led_control()
+            led_control("red timer")
             print("red timer started")
-        elif ~BLUE.value & ~blue_timer_started:
+        elif not BLUE.value or not blue_timer_started:
             blue_timer_started = True
             red_timer_started = False
-            led_control()
+            led_control("blue timer")
             print("blue timer started")
         display_message(f"RED: {red_time_str}\nBLUE: {blue_time_str}")
-        if red_time <= 0 | blue_time <= 0:
+        if red_time <= 0 or blue_time <= 0:
             break
         time.sleep(1)
     display_message(f"RED: {red_time_str}\nBLUE: {blue_time_str}")

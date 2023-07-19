@@ -14,9 +14,9 @@ def display_message(message):
     DISPLAY.print(message)
 
 # Placeholder function for LED control
-def led_control(color, pattern, time):
+def led_control(color, pattern="solid", time="until stopped"):
     #insert led functionality here later
-    print(color, pattern, time)
+    print(color)
 
 # Placeholder function for audio control
 def audio_control(sound_id):
@@ -181,12 +181,12 @@ def start_koth_timer():
         elif blue_timer_started:                  
             blue_time -= 1
             blue_time_str = timer_string(blue_time)
-        if not RED.value or not red_timer_started:
+        if not RED.value and not red_timer_started:
             red_timer_started = True
             blue_timer_started = False
             led_control("red timer")
             print("red timer started")
-        elif not BLUE.value or not blue_timer_started:
+        elif not BLUE.value and not blue_timer_started:
             blue_timer_started = True
             red_timer_started = False
             led_control("blue timer")

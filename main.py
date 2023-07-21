@@ -1,6 +1,6 @@
 import board
 import time
-from hardware import DISPLAY, ENCODER, ENC, RED, BLUE
+from hardware import DISPLAY, ENCODER, ENC, RED, RED_LED, BLUE, BLUE_LED
 
 # Setting initial variables for use
 position = ENCODER.position
@@ -34,6 +34,8 @@ def main_menu():
     global position, last_position
     led_control("main menu")
     display_message("You're a nerd")
+    RED_LED.value = False
+    BLUE_LED.value = False
     time.sleep(.5)
     display_message(f"Select a game:\n{MENU_OPTIONS[menu_option_index]}")
     while True:
@@ -125,11 +127,17 @@ def team_screen(game_mode):
         if not RED.value:
             team = "Red"
             led_control("red team")
+            RED_LED.value = True
+            BLUE_LED.value = False
             display_message(f"{game_mode}\nTeam {team}")
+            time.sleep(.1)
         if not BLUE.value:
             team = "Blue"
             led_control("blue team")
+            RED_LED.value = False
+            BLUE_LED.value = True
             display_message(f"{game_mode}\nTeam {team}")
+            time.sleep(.1)
         if not ENC.value:
             break
     time.sleep(.1)
@@ -185,11 +193,15 @@ def start_koth_timer():
             red_timer_started = True
             blue_timer_started = False
             led_control("red timer")
+            RED_LED.value = True
+            BLUE_LED.value = False
             print("red timer started")
         elif not BLUE.value and not blue_timer_started:
-            blue_timer_started = True
             red_timer_started = False
+            blue_timer_started = True
             led_control("blue timer")
+            RED_LED.value = False
+            BLUE_LED.value = True
             print("blue timer started")
         display_message(f"RED: {red_time_str}\nBLUE: {blue_time_str}")
         if red_time <= 0 or blue_time <= 0:

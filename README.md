@@ -5,6 +5,7 @@ Keeps many of the core build concepts, but aims to introduce an upgrade to some 
 
 ## Preliminary Parts List
 Parts are listed on a per-timer basis. Prices are tax and shipping exclusive.
+Current price breakdown gives about $64 per bucket.
 
 #### Raspberry Pi Pico W - 1x $6 - https://www.adafruit.com/product/5526 or https://www.microcenter.com/product/650108/raspberry-pi-pico-w
 >The heart of the build. Can be supplemented with a regular Pi Pico if you have no need for wireless/bluetooth, and can also be orderered in the "WH" version with header pins pre-soldered onto it. Other CircuitPython-compatible controllers could be used, but would require pinout configuration and additional setup.

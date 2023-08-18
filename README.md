@@ -49,3 +49,9 @@ Current price breakdown gives about $64 per bucket.
 
 #### Low Voltage Cutoff Module - .33x $14 - https://www.amazon.com/dp/B0B6BP6J2D/
 >Rather than rely on alarms alone for LiPo, this is an extra level of safety for them that I'd like to be an auto-include in future builds.
+
+
+
+---
+My code and designs included in this repo are licensed under CC4.0 CC-BY-NC-SA.
+Code references, libraries, and other non-original creations are under their original licenses and attributions.

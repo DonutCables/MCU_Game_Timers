@@ -1,4 +1,5 @@
 from time import sleep, monotonic
+from gc import enable
 from hardware import DISPLAY, RGB_LED, ENCODER, ENC, RED, RED_LED, BLUE, BLUE_LED
 
 # Setting initial variables for use
@@ -18,7 +19,7 @@ def display_message(message):
     DISPLAY.clear()
     DISPLAY.print(message)
 
-# Placeholder function for LED control
+# RGB control via Adafruit NeoPixel
 def rgb_control(color, pattern="solid", delay=0.005):
     global RGB_LED
     if pattern == "solid":
@@ -50,10 +51,6 @@ def rgb_control(color, pattern="solid", delay=0.005):
 def audio_control(sound_id):
     #insert audio functionality here
     print(sound_id)
-
-# Function to fetch human-readable strings from timer values
-def timer_string(game_length):
-    return f"{game_length // 60:02d}:{game_length % 60:02d}"
 
 ###
 
@@ -103,7 +100,7 @@ def timer_screen(game_mode):
     sleep(.5)
     global position, last_position, game_length
     game_length = 0
-    display_message(f"{game_mode}\nTime: {timer_string(game_length)}")
+    display_message(f"{game_mode}\nTime: {game_length // 60:02d}:{game_length % 60:02d}")
     while ENC.value:
         position = ENCODER.position
         if position != last_position:
@@ -112,7 +109,7 @@ def timer_screen(game_mode):
             elif position < last_position:   # counterclockwise rotation
                 if game_length > 0:
                     game_length -= 15
-            display_message(f"{game_mode}\nTime: {timer_string(game_length)}")
+            display_message(f"{game_mode}\nTime: {game_length // 60:02d}:{game_length % 60:02d}")
             last_position = position
     sleep(.1)
     standby_screen(game_mode)
@@ -164,13 +161,13 @@ def team_screen(game_mode):
 def standby_screen(game_mode):
     sleep(.5)
     if game_mode == "KotH":
-        display_message(f"{game_mode} Ready\n{timer_string(game_length)}")
+        display_message(f"{game_mode} Ready\n{game_length // 60:02d}:{game_length % 60:02d}")
     elif game_mode == "Attrition":
-            display_message(f"{game_mode} Ready\nTeam {team} {lives_count} Lives")
+            display_message(f"{game_mode} Ready\nTeam {team} {lives_count} Life")
     elif game_mode == "Death Clicks":
         display_message(f"{game_mode}\nReady Team {team}")
     elif game_mode == "Domination":
-        display_message(f"{game_mode}\nReady {timer_string(game_length)}")
+        display_message(f"{game_mode}\nReady {game_length // 60:02d}:{game_length % 60:02d}")
     rgb_control(COLOR_OFF, "chase")
     sleep(1)
     while ENC.value:
@@ -195,13 +192,13 @@ def start_koth_timer():
     global position, last_position, restart_option_index
     red_time = game_length
     blue_time = game_length
-    red_time_str = timer_string(red_time)
-    blue_time_str = timer_string(blue_time)
+    red_time_str = f"{red_time // 60:02d}:{red_time % 60:02d}"
+    blue_time_str = f"{blue_time // 60:02d}:{blue_time % 60:02d}"
     red_timer_started = False
     blue_timer_started = False
     RED_LED.value = False
     BLUE_LED.value = False
-    display_message(f"RED: {timer_string(game_length)}\nBLUE: {timer_string(game_length)}")
+    display_message(f"RED: {red_time_str}\nBLUE: {blue_time_str}")
     rgb_control(COLOR_GREEN, "chase")
     sleep(.5)
     while RED.value and BLUE.value:
@@ -211,10 +208,10 @@ def start_koth_timer():
         if monotonic()-clock >= 1:
             if red_timer_started:            
                 red_time -= 1
-                red_time_str = timer_string(red_time)
+                red_time_str = f"{red_time // 60:02d}:{red_time % 60:02d}"
             elif blue_timer_started:                  
                 blue_time -= 1
-                blue_time_str = timer_string(blue_time)
+                blue_time_str = f"{blue_time // 60:02d}:{blue_time % 60:02d}"
             display_message(f"RED:  {red_time_str}\nBLUE: {blue_time_str}")
             clock = monotonic()
         if not RED.value and not red_timer_started:
@@ -282,7 +279,6 @@ def start_attrition_counter():
                 rgb_control(COLOR_OFF, "chase", .001)
                 rgb_control(COLOR_BLUE, "chase", .001)
             display_message(f"{team} Lives Left\n{lives_attr}")
-        sleep(.2)
     display_message(f"{team} Lives Left\n{lives_attr}")
     while ENC.value:
         if team == "Red":
@@ -383,13 +379,13 @@ def start_domination_timer():
     dom_time = game_length
     red_time = 0
     blue_time = 0
-    display_message(f"{team} Team\n {timer_string(dom_time)}")
+    display_message(f"{team} Team\n{dom_time // 60:02d}:{dom_time % 60:02d}")
     rgb_control(COLOR_GREEN, "chase")
     clock = monotonic()
     while dom_time > 0:
         if monotonic()-clock >= 1:
             dom_time -= 1
-            display_message(f"{team} Team\n{timer_string(dom_time)}")
+            display_message(f"{team} Team\n{dom_time // 60:02d}:{dom_time % 60:02d}")
             clock = monotonic()
         if not RED.value:
             red_time = monotonic()
@@ -398,7 +394,7 @@ def start_domination_timer():
                     team = "Red"
                     RED_LED.value = True
                     BLUE_LED.value = False
-                    display_message(f"Red Team \n{timer_string(dom_time)}")
+                    display_message(f"Red Team \n{dom_time // 60:02d}:{dom_time % 60:02d}")
                     rgb_control(COLOR_RED, "solid")
                     print("red point control")
                     red_time = monotonic()
@@ -409,7 +405,7 @@ def start_domination_timer():
                     team = "Blue"
                     RED_LED.value = False
                     BLUE_LED.value = True
-                    display_message(f"Blue Team \n{timer_string(dom_time)}")
+                    display_message(f"Blue Team \n{dom_time // 60:02d}:{dom_time % 60:02d}")
                     rgb_control(COLOR_BLUE, "solid")
                     print("blue point control")
                     blue_time = monotonic()
@@ -442,6 +438,8 @@ def start_domination_timer():
         standby_screen("Domination")
     elif restart_option_index == 1:
         main_menu()
+
+enable()
 
 if __name__ == '__main__':
     main_menu()

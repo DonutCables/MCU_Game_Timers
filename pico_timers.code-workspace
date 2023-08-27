@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "D:/"
+		},
+		{
+			"path": "../../../../media/donutcat/CIRCUITPY"
 		}
 	],
 	"settings": {
@@ -14,15 +17,20 @@
 			"reportMissingModuleSource": "none"
 		},
 		"python.analysis.extraPaths": [
-			"s:\\VSC\\data\\extensions\\joedevivo.vscode-circuitpython-0.1.20-win32-x64\\boards\\0x239A\\0x80F4",
-			"s:\\VSC\\data\\extensions\\joedevivo.vscode-circuitpython-0.1.20-win32-x64\\stubs",
-			"s:\\VSC\\data\\user-data\\User\\globalStorage\\joedevivo.vscode-circuitpython\\bundle\\20230824\\adafruit-circuitpython-bundle-py-20230824\\lib",
+			"/home/donutcat/.vscode/extensions/joedevivo.vscode-circuitpython-0.1.20-linux-x64/boards/0x239A/0x80F4",
+			"/home/donutcat/.vscode/extensions/joedevivo.vscode-circuitpython-0.1.20-linux-x64/stubs",
+			"/home/donutcat/.config/Code/User/globalStorage/joedevivo.vscode-circuitpython/bundle/20230824/adafruit-circuitpython-bundle-py-20230824/lib",
 			"./lib",
 			"."
 		],
 		"circuitpython.board.version": "8.2.0",
 		"circuitpython.board.vid": "0x239A",
 		"circuitpython.board.pid": "0x80F4",
-		"terminal.integrated.altClickMovesCursor": false
+		"terminal.integrated.altClickMovesCursor": false,
+		"editor.formatOnSave": true,
+		"python.formatting.provider": "black",
+		"[python]": {
+			"editor.defaultFormatter": "ms-python.black-formatter"
+		}
 	}
 }

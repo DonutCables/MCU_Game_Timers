@@ -1,11 +1,12 @@
 from time import sleep, monotonic
 from gc import enable
 from hardware import DISPLAY, RGB_LED, ENCODER, ENC, RED, RED_LED, BLUE, BLUE_LED
+from audio_commands import play_track, set_vol
 
 # Setting initial variables for use
 position = ENCODER.position
 last_position = position
-MENU_OPTIONS = ["KotH", "Attrition", "Death Clicks", "Domination"]
+MENU_OPTIONS = ["KotH", "Attrition", "Death Clicks", "Domination", "Basic Timer"]
 menu_option_index = 0
 RESTART_OPTIONS = ["Yes", "No"]
 restart_option_index = 0
@@ -14,8 +15,8 @@ COLOR_GREEN = (0, 255, 0)
 COLOR_BLUE = (0, 0, 255)
 COLOR_OFF = (0, 0, 0)
 
-# Function to display LCD messages
 def display_message(message):
+    """Displays a string to the 1602 LCD"""
     DISPLAY.clear()
     DISPLAY.print(message)
 
@@ -94,6 +95,8 @@ def run_program(menu_choice):
         team_screen(menu_choice)
     elif menu_choice == "Domination":
         timer_screen(menu_choice)
+    elif menu_choice == "Basic Timer":
+        timer_screen(menu_choice)
 
 # Screen used to set time for KotH and Domination
 def timer_screen(game_mode):
@@ -168,6 +171,8 @@ def standby_screen(game_mode):
         display_message(f"{game_mode}\nReady Team {team}")
     elif game_mode == "Domination":
         display_message(f"{game_mode}\nReady {game_length // 60:02d}:{game_length % 60:02d}")
+    elif game_mode == "Basic Timer":
+        display_message(f"{game_mode}\nReady {game_length // 60:02d}:{game_length % 60:02d}")
     rgb_control(COLOR_OFF, "chase")
     sleep(1)
     while ENC.value:
@@ -182,9 +187,12 @@ def standby_screen(game_mode):
     elif game_mode == "Death Clicks":
         display_message(f"{game_mode}\nStarting...")
         start_clicks_counter()
-    if game_mode == "Domination":
+    elif game_mode == "Domination":
         display_message(f"{game_mode}\nStarting...")
         start_domination_timer()
+    elif game_mode == "Basic Timer":
+        display_message(f"{game_mode}\nStarting...")
+        start_basic_timer()
 
 # Function for KotH timers
 def start_koth_timer():
@@ -196,6 +204,7 @@ def start_koth_timer():
     blue_time_str = f"{blue_time // 60:02d}:{blue_time % 60:02d}"
     red_timer_started = False
     blue_timer_started = False
+    timer_state = (False, False)
     RED_LED.value = False
     BLUE_LED.value = False
     display_message(f"RED: {red_time_str}\nBLUE: {blue_time_str}")
@@ -228,6 +237,14 @@ def start_koth_timer():
             RED_LED.value = False
             BLUE_LED.value = True
             print("blue timer started")
+        if not ENC.value:
+            if red_timer_started == True or blue_timer_started == False:
+                timer_state = (red_timer_started, blue_timer_started)
+                red_timer_started, blue_timer_started = False, False
+            else:
+                red_timer_started, blue_timer_started = timer_state
+                timer_state = (False, False)
+            sleep(.1)
     display_message(f"RED:  {red_time_str}\nBLUE: {blue_time_str}")
     while ENC.value:
         if red_timer_started == True:
@@ -377,6 +394,7 @@ def start_domination_timer():
     RED_LED.value = False
     BLUE_LED.value = False
     dom_time = game_length
+    dom_time_started = True
     red_time = 0
     blue_time = 0
     display_message(f"{team} Team\n{dom_time // 60:02d}:{dom_time % 60:02d}")
@@ -384,7 +402,8 @@ def start_domination_timer():
     clock = monotonic()
     while dom_time > 0:
         if monotonic()-clock >= 1:
-            dom_time -= 1
+            if dom_time_started == True:
+                dom_time -= 1
             display_message(f"{team} Team\n{dom_time // 60:02d}:{dom_time % 60:02d}")
             clock = monotonic()
         if not RED.value:
@@ -409,6 +428,9 @@ def start_domination_timer():
                     rgb_control(COLOR_BLUE, "solid")
                     print("blue point control")
                     blue_time = monotonic()
+        if not ENC.value:
+            dom_time_started = not dom_time_started
+            sleep(.5)
     display_message(f"{team} Team\nPoint Locked")
     while ENC.value:
         if team == "Red":
@@ -439,7 +461,49 @@ def start_domination_timer():
     elif restart_option_index == 1:
         main_menu()
 
+def start_basic_timer():
+    sleep(.5)
+    global position, last_position, restart_option_index
+    basic_time = game_length
+    basic_timer_started = True
+    display_message(f"{basic_time // 60:02d}:{basic_time % 60:02d}")
+    clock = monotonic()
+    while basic_time > 0:
+        if monotonic()-clock >=1:
+            if basic_timer_started:
+                basic_time -= 1
+            if basic_time < 11:
+                play_track(basic_time+15)
+            display_message(f"{basic_time // 60:02d}:{basic_time % 60:02d}")
+            clock = monotonic()
+        if not ENC.value:
+            basic_timer_started = not basic_timer_started
+        if basic_time == 30:
+            play_track(26)
+    sleep(1)
+    display_message(f"Restart?:\n{RESTART_OPTIONS[restart_option_index]}")
+    while ENC.value:
+        position = ENCODER.position
+        if position != last_position:
+            if position > last_position:
+                restart_option_index += 1
+                if restart_option_index == len(RESTART_OPTIONS):
+                    restart_option_index = 0
+            elif position < last_position:
+                restart_option_index -= 1
+                if restart_option_index < 0:
+                    restart_option_index = len(RESTART_OPTIONS)-1
+            last_position = position
+            display_message(f"Restart?:\n{RESTART_OPTIONS[restart_option_index]}")
+    if restart_option_index == 0:
+        rgb_control(COLOR_GREEN, "chase")
+        standby_screen("Basic Timer")
+    elif restart_option_index == 1:
+        main_menu()
+
 enable()
+
+set_vol(30)
 
 if __name__ == '__main__':
     main_menu()

@@ -4,19 +4,28 @@ from busio import I2C, UART
 from rotaryio import IncrementalEncoder
 from digitalio import DigitalInOut, Pull, DriveMode
 from neopixel import NeoPixel
-from lcd import LCD 
+from lcd import LCD
 from i2c_pcf8574_interface import I2CPCF8574Interface
 
 # I2C display assignments
 lcd_i2c = I2C(board.GP1, board.GP0)
-pcf_interface = I2CPCF8574Interface(lcd_i2c, 0x27) # 0x3F alt addr
+pcf_interface = I2CPCF8574Interface(lcd_i2c, 0x27)  # 0x3F alt addr
 DISPLAY = LCD(pcf_interface, num_rows=2, num_cols=16)
 
 # UART audio output
 AUDIO = UART(board.GP4, board.GP5, baudrate=9600)
 
 # Initialize rotary encoder and buttons
-iopins = (board.GP26_A0, board.GP8, board.GP7, board.GP6, board.GP16, board.GP17, board.GP15, board.GP14)
+iopins = (
+    board.GP26_A0,
+    board.GP8,
+    board.GP7,
+    board.GP6,
+    board.GP16,
+    board.GP17,
+    board.GP15,
+    board.GP14,
+)
 
 led_count = 58
 RGB_LED = NeoPixel(iopins[0], led_count, brightness=1, auto_write=False)

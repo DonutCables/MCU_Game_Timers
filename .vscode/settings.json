@@ -19,5 +19,6 @@
     "circuitpython.board.vid": "0x239A",
     "circuitpython.board.pid": "0x8120",
     "black-formatter.importStrategy": "useBundled",
-    "python.formatting.provider": "black"
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true
 }

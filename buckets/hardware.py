@@ -1,3 +1,7 @@
+"""
+Hardware declarations for the timer project. 
+Used to easily change pin connections without changing the primary code.
+"""
 import board
 
 from busio import I2C, UART

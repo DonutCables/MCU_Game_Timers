@@ -1,9 +1,12 @@
+"""
+A translation for making nice clean functions from the UART mishmash being sent to the module.
+"""
 from hardware import AUDIO
 
 cmd_base = bytearray([0x7E, 0xFF, 0x06, 0x00, 0x00, 0x00, 0x00, 0xEF])
 
 
-def play_track(track):
+def play_track(track: int):
     """Plays a track based on the numerical name"""
     play_track = cmd_base
     play_track[3] = 0x03
@@ -25,7 +28,7 @@ def vol_down():
     AUDIO.write(vol_down)
 
 
-def set_vol(level):
+def set_vol(level: int):
     """Sets volume level from 0-30"""
     set_vol = cmd_base
     set_vol[3] = 0x06

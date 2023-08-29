@@ -1,7 +1,9 @@
 from time import sleep, monotonic
 from gc import enable
-from hardware import DISPLAY, RGB_LED, ENCODER, ENC, RED, BLUE, RED_LED, BLUE_LED
+from random import randint
+from hardware import DISPLAY, ENCODER, ENC, RED, BLUE, RED_LED, BLUE_LED
 from audio_commands import play_track, set_vol
+from led_commands import rgb_control
 
 # Setting initial variables for use
 position = ENCODER.position
@@ -16,47 +18,23 @@ MENU = [
 menu_index = 0
 RESTART_OPTIONS = ["Yes", "No"]
 restart_option_index = 0
-COLOR = {
-    "Red": (255, 0, 0),
-    "Green": (0, 255, 0),
-    "Blue": (0, 0, 255),
-    "Off": (0, 0, 0),
-}
+EXTRAS = [
+    "You're a nerd",
+    "Weiners",
+    "Ooh, a piece of candy",
+    "Oatmeal",
+    "You're my little pogchamp",
+    "Anything is a   hammer once",
+    "Watch out for   them pointy bits",
+    "This bucket kills fascists",
+    "Taco Tuesday",
+]
 
 
-def display_message(message: str):
+def display_message(message):
     """Displays a string to the 1602 LCD"""
     DISPLAY.clear()
     DISPLAY.print(message)
-
-
-def rgb_control(color: str, pattern="solid", delay=0.005):
-    """RGB control via Adafruit NeoPixel"""
-    global RGB_LED
-    if pattern == "solid":
-        RGB_LED.fill(COLOR[color])
-        RGB_LED.show()
-    elif pattern == "chase":
-        for i in range(RGB_LED.n):
-            RGB_LED[i] = COLOR[color]
-            sleep(delay)
-            RGB_LED.show()
-    elif pattern == "single_blink":
-        for i in range(RGB_LED.n):
-            RGB_LED[i] = COLOR[color]
-            RGB_LED.show()
-            sleep(delay)
-            RGB_LED[i] = COLOR["Off"]
-            RGB_LED.show()
-            sleep(delay)
-    elif pattern == "all_blink":
-        RGB_LED.fill(COLOR[color])
-        RGB_LED.show()
-        sleep(delay)
-        RGB_LED.fill(COLOR["Off"])
-        RGB_LED.show()
-        sleep(delay)
-    print(color, pattern)
 
 
 ###
@@ -65,11 +43,10 @@ def rgb_control(color: str, pattern="solid", delay=0.005):
 def main_menu():
     """Main menu for scrolling and displaying game options"""
     global position, last_position, menu_index
-    display_message("You're a nerd")
+    display_message(EXTRAS[randint(0, len(EXTRAS) - 1)])
     rgb_control("Off", "solid")
-    rgb_control("Red", "chase", 0.0075)
-    rgb_control("Blue", "chase", 0.0075)
-    rgb_control("Green", "chase", 0.0075)
+    for color in ["Red", "Blue", "Green"]:
+        rgb_control(color, "chase", 0.0075)
     RED_LED.value = False
     BLUE_LED.value = False
     display_message(f"Select a game:\n{MENU[menu_index]}")
@@ -83,11 +60,10 @@ def main_menu():
                 menu_index = (menu_index - 1) % len(MENU)
             last_position = position
             display_message(f"Select a game:\n{MENU[menu_index]}")
-    sleep(0.1)
     run_program(MENU[menu_index])
 
 
-def run_program(menu_choice: str):
+def run_program(menu_choice):
     """Used to run a function when the respective menu item is selected"""
     display_message(f"Running:\n{menu_choice}")
     sleep(1)
@@ -99,8 +75,8 @@ def run_program(menu_choice: str):
         team_screen(menu_choice)
 
 
-def timer_screen(game_mode: str):
-    """Screen used to set time for KotH, Domination, and Basic Timer"""
+def timer_screen(game_mode):
+    """Screen used to set time for KotH and Domination"""
     sleep(0.5)
     global position, last_position, game_length
     game_length = 0
@@ -123,7 +99,7 @@ def timer_screen(game_mode: str):
     standby_screen(game_mode)
 
 
-def counter_screen(game_mode: str):
+def counter_screen(game_mode):
     """Screen used to set lives for Attrition"""
     sleep(0.5)
     global position, last_position, lives_count
@@ -143,7 +119,7 @@ def counter_screen(game_mode: str):
     team_screen(game_mode)
 
 
-def team_screen(game_mode: str):
+def team_screen(game_mode):
     """Screen for selecting team counter for Attrition and Death Clicks"""
     sleep(0.5)
     global team
@@ -168,7 +144,7 @@ def team_screen(game_mode: str):
     standby_screen(game_mode)
 
 
-def standby_screen(game_mode: str):
+def standby_screen(game_mode):
     """Pre-game confirmation screen"""
     sleep(0.5)
     if game_mode == "KotH":
@@ -192,16 +168,20 @@ def standby_screen(game_mode: str):
     while ENC.value:
         sleep(0.1)
     sleep(0.1)
-    display_message(f"{game_mode}\nStarting...")
     if game_mode == "KotH":
+        display_message(f"{game_mode}\nStarting...")
         start_koth_timer()
     elif game_mode == "Attrition":
+        display_message(f"{game_mode}\nStarting...")
         start_attrition_counter()
     elif game_mode == "Death Clicks":
+        display_message(f"{game_mode}\nStarting...")
         start_clicks_counter()
     elif game_mode == "Domination":
+        display_message(f"{game_mode}\nStarting...")
         start_domination_timer()
     elif game_mode == "Basic Timer":
+        display_message(f"{game_mode}\nStarting...")
         start_basic_timer()
 
 
@@ -260,10 +240,9 @@ def start_koth_timer():
     while ENC.value:
         if red_timer_started == True:
             rgb_control("Red", "chase")
-            rgb_control("Off", "chase")
         elif blue_timer_started == True:
             rgb_control("Blue", "chase")
-            rgb_control("Off", "chase")
+        rgb_control("Off", "chase")
     sleep(1)
     rgb_control("Off", "chase")
     display_message(f"Restart?:\n{RESTART_OPTIONS[restart_option_index]}")
@@ -314,14 +293,9 @@ def start_attrition_counter():
             last_position = position
             display_message(f"Restart?:\n{RESTART_OPTIONS[restart_option_index]}")
     if restart_option_index == 0:
-        if team == "Red":
-            team = "Blue"
-            RED_LED.value = False
-            BLUE_LED.value = True
-        elif team == "Blue":
-            team = "Red"
-            RED_LED.value = True
-            BLUE_LED.value = False
+        team = not team
+        RED_LED.value = not RED_LED.value
+        BLUE_LED.value = not BLUE_LED.value
         rgb_control(team, "chase")
         standby_screen("Attrition")
     elif restart_option_index == 1:
@@ -334,19 +308,12 @@ def start_clicks_counter():
     global position, last_position, restart_option_index, team
     death_count = 0
     display_message(f"{team} team\nDeaths {death_count}")
-    if team == "Red":
-        rgb_control("Red", "chase")
-    elif team == "Blue":
-        rgb_control("Blue", "chase")
+    rgb_control(team, "chase")
     while ENC.value:
         if not RED.value or not BLUE.value:
             death_count += 1
-            if team == "Red":
-                rgb_control("Off", "chase", 0.001)
-                rgb_control("Red", "chase", 0.001)
-            elif team == "Blue":
-                rgb_control("Off", "chase", 0.001)
-                rgb_control("Blue", "chase", 0.001)
+            rgb_control("Off", "chase", 0.001)
+            rgb_control(team, "chase", 0.001)
             display_message(f"{team} team\nDeaths {death_count}")
     sleep(1)
     display_message(f"Restart?:\n{RESTART_OPTIONS[restart_option_index]}")
@@ -361,14 +328,9 @@ def start_clicks_counter():
             last_position = position
             display_message(f"Restart?:\n{RESTART_OPTIONS[restart_option_index]}")
     if restart_option_index == 0:
-        if team == "Red":
-            team = "Blue"
-            RED_LED.value = False
-            BLUE_LED.value = True
-        elif team == "Blue":
-            team = "Red"
-            RED_LED.value = True
-            BLUE_LED.value = False
+        team = not team
+        RED_LED.value = not RED_LED.value
+        BLUE_LED.value = not BLUE_LED.value
         rgb_control(team, "chase")
         standby_screen("Death Clicks")
     elif restart_option_index == 1:
@@ -402,10 +364,10 @@ def start_domination_timer():
                     RED_LED.value = True
                     BLUE_LED.value = False
                     display_message(
-                        f"Red Team \n{dom_time // 60:02d}:{dom_time % 60:02d}"
+                        f"{team} Team \n{dom_time // 60:02d}:{dom_time % 60:02d}"
                     )
-                    rgb_control("Red", "solid")
-                    print("red point control")
+                    rgb_control(team, "solid")
+                    print(f"{team} point control")
                     red_time = monotonic()
         elif not BLUE.value:
             blue_time = monotonic()
@@ -415,10 +377,10 @@ def start_domination_timer():
                     RED_LED.value = False
                     BLUE_LED.value = True
                     display_message(
-                        f"Blue Team \n{dom_time // 60:02d}:{dom_time % 60:02d}"
+                        f"{team} Team \n{dom_time // 60:02d}:{dom_time % 60:02d}"
                     )
-                    rgb_control("Blue", "solid")
-                    print("blue point control")
+                    rgb_control(team, "solid")
+                    print(f"{team} point control")
                     blue_time = monotonic()
         if not ENC.value:
             dom_time_started = not dom_time_started
@@ -447,7 +409,6 @@ def start_domination_timer():
 
 
 def start_basic_timer():
-    """Basic timer function for round timing"""
     sleep(0.5)
     global position, last_position, restart_option_index
     basic_time = game_length

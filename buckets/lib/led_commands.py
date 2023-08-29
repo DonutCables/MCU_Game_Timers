@@ -6,14 +6,14 @@ from time import sleep
 
 
 COLOR = {
-    "red": (255, 0, 0),
-    "green": (0, 255, 0),
-    "blue": (0, 0, 255),
-    "off": (0, 0, 0),
+    "Red": (255, 0, 0),
+    "Green": (0, 255, 0),
+    "Blue": (0, 0, 255),
+    "Off": (0, 0, 0),
 }
 
 
-def rgb_control(color, pattern="solid", delay=0.005):
+def rgb_control(color="Off", pattern="chase", delay=0.005):
     """RGB control via Adafruit NeoPixel"""
     global RGB_LED
     if pattern == "solid":

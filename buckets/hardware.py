@@ -8,6 +8,7 @@ from busio import I2C, UART
 from rotaryio import IncrementalEncoder
 from digitalio import DigitalInOut, Pull, DriveMode
 from neopixel import NeoPixel
+from adafruit_debouncer import Button
 from lcd import LCD
 from i2c_pcf8574_interface import I2CPCF8574Interface
 
@@ -47,5 +48,12 @@ ENCODER = IncrementalEncoder(iopins[1], iopins[2])
 ENC, RED, BLUE, RED_LED, BLUE_LED = (DigitalInOut(pin) for pin in iopins[3:])
 for button in [ENC, RED, BLUE]:
     button.switch_to_input(Pull.UP)
+# Create debouncer buttons for long-press functionality
+hold_duration = 1000  # Duration for long holds in ms
+ENCB, REDB, BLUEB = (
+    Button(ENC, long_duration_ms=2500),
+    Button(RED, long_duration_ms=hold_duration),
+    Button(BLUE, long_duration_ms=hold_duration),
+)
 for led in [RED_LED, BLUE_LED]:
     led.switch_to_output(False, DriveMode.PUSH_PULL)

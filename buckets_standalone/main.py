@@ -49,18 +49,27 @@ def display_message(message):
     DISPLAY.print(message)
 
 
+def update_team(teamp: str, speed=0.005):
+    """Updates button LED state based on team"""
+    global team
+    team = teamp
+    RED_LED.value = "Red" in teamp
+    BLUE_LED.value = "Blue" in teamp
+    rgb_control(team, delay=speed)
+
+
 ###
 
 
 def main_menu():
     """Main menu for scrolling and displaying game options"""
-    global position, last_position, menu_index
+    global position, last_position, menu_index, team, timer_state
     display_message(EXTRAS[randint(0, len(EXTRAS) - 1)])
     rgb_control("Off", "solid")
     for color in ["Red", "Blue", "Green"]:
         rgb_control(color)
-    RED_LED.value = False
-    BLUE_LED.value = False
+    timer_state = True
+    update_team("Green")
     display_message(f"Select a game:\n{MENU[menu_index]}")
     sleep(0.5)
     while ENC.value:
@@ -135,22 +144,14 @@ def team_screen(game_mode):
     """Screen for selecting team counter for Attrition and Death Clicks"""
     sleep(0.5)
     global team
-    team = "Green"
     display_message(f"{game_mode}\nTeam:")
     while ENC.value:
-        if not RED.value:
-            team = "Red"
-            RED_LED.value = True
-            BLUE_LED.value = False
+        if not RED.value or not BLUE.value:
+            if not RED.value:
+                update_team("Red")
+            if not BLUE.value:
+                update_team("Blue")
             display_message(f"{game_mode}\nTeam {team}")
-            rgb_control(team, "chase")
-            sleep(0.1)
-        if not BLUE.value:
-            team = "Blue"
-            RED_LED.value = False
-            BLUE_LED.value = True
-            display_message(f"{game_mode}\nTeam {team}")
-            rgb_control(team, "chase")
             sleep(0.1)
     sleep(0.1)
     standby_screen(game_mode)
@@ -179,7 +180,7 @@ def standby_screen(game_mode):
         display_message(
             f"{game_mode}\nReady {game_length // 60:02d}:{game_length % 60:02d}"
         )
-    rgb_control("Off", "chase")
+    rgb_control("Off")
     sleep(0.5)
     while ENC.value:
         sleep(0.1)
@@ -207,17 +208,14 @@ def standby_screen(game_mode):
 def start_koth_timer(game_mode):
     """Function for KotH timers"""
     sleep(0.5)
-    global position, last_position, restart_index, team
+    global position, last_position, restart_index, team, timer_state
     red_time = game_length
     blue_time = game_length
     red_time_str = f"{red_time // 60:02d}:{red_time % 60:02d}"
     blue_time_str = f"{blue_time // 60:02d}:{blue_time % 60:02d}"
-    team = "Green"
-    timer_state = "Green"
-    RED_LED.value = False
-    BLUE_LED.value = False
+    timer_state = True
     display_message(f"RED: {red_time_str}\nBLUE: {blue_time_str}")
-    rgb_control(team, "chase")
+    update_team("Green")
     sleep(0.5)
     while RED.value and BLUE.value:
         REDB.update()
@@ -228,45 +226,34 @@ def start_koth_timer(game_mode):
         ENCB.update()
         REDB.update()
         BLUEB.update()
-        if not RED.value and team != "Red":
-            team = "Red"
-            rgb_control(team, "chase", 0.0025)
-            RED_LED.value = True
-            BLUE_LED.value = False
+        if not RED.value and team != "Red" and timer_state:
+            update_team("Red", 0.0025)
             print(f"{team} timer started")
-        elif not BLUE.value and team != "Blue":
-            team = "Blue"
-            rgb_control(team, "chase", 0.0025)
-            RED_LED.value = False
-            BLUE_LED.value = True
+        elif not BLUE.value and team != "Blue" and timer_state:
+            update_team("Blue", 0.0025)
             print(f"{team} timer started")
         if monotonic() - clock >= 1:
-            if team == "Red":
-                red_time -= 1
-                red_time_str = f"{red_time // 60:02d}:{red_time % 60:02d}"
-            elif team == "Blue":
-                blue_time -= 1
-                blue_time_str = f"{blue_time // 60:02d}:{blue_time % 60:02d}"
-            if team != "Green":
-                display_message(f"RED:  {red_time_str}\nBLUE: {blue_time_str}")
+            if timer_state:
+                if team == "Red":
+                    red_time -= 1
+                    red_time_str = f"{red_time // 60:02d}:{red_time % 60:02d}"
+                elif team == "Blue":
+                    blue_time -= 1
+                    blue_time_str = f"{blue_time // 60:02d}:{blue_time % 60:02d}"
+            display_message(f"RED:  {red_time_str}\nBLUE: {blue_time_str}")
             clock = monotonic()
-        if ENCB.short_count != 0:
-            if team == "Red" or team == "Blue":
-                timer_state = team
-                team = "Green"
-            else:
-                team = timer_state
-                timer_state = "Green"
+        if ENCB.short_count > 1:
+            timer_state = not timer_state
         if ENCB.long_press:
             break
     display_message(f"RED:  {red_time_str}\nBLUE: {blue_time_str}")
     while ENCB.value:
         ENCB.update()
-        rgb_control(team, "chase")
+        rgb_control(team)
         ENCB.update()
-        rgb_control("Off", "chase")
+        rgb_control("Off")
     sleep(0.1)
-    rgb_control("Off", "chase")
+    rgb_control("Off")
     display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
     sleep(0.5)
     while ENC.value:
@@ -279,9 +266,7 @@ def start_koth_timer(game_mode):
             last_position = position
             display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
     if restart_index == 0:
-        rgb_control("Green", "chase")
-        RED_LED.value = False
-        BLUE_LED.value = False
+        update_team("Green")
         standby_screen(game_mode)
     elif restart_index == 1:
         main_menu()
@@ -293,7 +278,7 @@ def start_attrition_counter(game_mode):
     global position, last_position, restart_index, team
     lives_attr = lives_count
     display_message(f"{team} Lives Left\n{lives_attr}")
-    rgb_control(team, "chase")
+    rgb_control(team)
     while lives_attr > 0:
         ENCB.update()
         if not RED.value or not BLUE.value:
@@ -306,12 +291,12 @@ def start_attrition_counter(game_mode):
     display_message(f"{team} Lives Left\n{lives_attr}")
     while ENCB.value:
         ENCB.update()
-        rgb_control(team, "chase")
+        rgb_control(team)
         ENCB.update()
-        rgb_control("Off", "chase")
+        rgb_control("Off")
     sleep(0.1)
     display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
-    rgb_control("Off", "chase")
+    rgb_control("Off")
     sleep(0.5)
     while ENC.value:
         position = ENCODER.position
@@ -323,10 +308,7 @@ def start_attrition_counter(game_mode):
             last_position = position
             display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
     if restart_index == 0:
-        team = "Red" if team != "Red" else "Blue"
-        RED_LED.value = not RED_LED.value
-        BLUE_LED.value = not BLUE_LED.value
-        rgb_control(team)
+        update_team(("Red", "Blue")[team == "Blue"])
         standby_screen(game_mode)
     elif restart_index == 1:
         main_menu()
@@ -338,7 +320,7 @@ def start_clicks_counter(game_mode):
     global position, last_position, restart_index, team
     death_count = 0
     display_message(f"{team} team\nDeaths {death_count}")
-    rgb_control(team, "chase")
+    rgb_control(team)
     while not ENCB.long_press:
         ENCB.update()
         if not RED.value or not BLUE.value:
@@ -347,7 +329,7 @@ def start_clicks_counter(game_mode):
             rgb_control(team, "chase", 0.001)
             display_message(f"{team} team\nDeaths {death_count}")
     display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
-    rgb_control("Off", "chase")
+    rgb_control("Off")
     sleep(0.5)
     while ENC.value:
         position = ENCODER.position
@@ -359,10 +341,7 @@ def start_clicks_counter(game_mode):
             last_position = position
             display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
     if restart_index == 0:
-        team = "Red" if team != "Red" else "Blue"
-        RED_LED.value = not RED_LED.value
-        BLUE_LED.value = not BLUE_LED.value
-        rgb_control(team)
+        update_team(("Red", "Blue")[team == "Blue"])
         standby_screen(game_mode)
     elif restart_index == 1:
         main_menu()
@@ -371,53 +350,43 @@ def start_clicks_counter(game_mode):
 def start_domination_2_timer(game_mode):
     """Function for Domination v2 timer"""
     sleep(0.5)
-    global position, last_position, restart_index, team
-    team = "Green"
-    RED_LED.value = False
-    BLUE_LED.value = False
+    global position, last_position, restart_index, team, timer_state
     dom_time = game_length
-    dom_time_started = True
+    dom_time_str = f"{dom_time // 60:02d}:{dom_time % 60:02d}"
+    timer_state = True
     display_message(f"{team} Team\n{dom_time // 60:02d}:{dom_time % 60:02d}")
-    rgb_control(team, "chase")
+    update_team("Green")
     clock = monotonic()
     while dom_time > 0:
         ENCB.update()
         REDB.update()
         BLUEB.update()
+        if REDB.long_press and timer_state:
+            update_team("Red", 0.0025)
+            display_message(f"{team} Team \n{dom_time // 60:02d}:{dom_time % 60:02d}")
+            print(f"{team} point control")
+        elif BLUEB.long_press and timer_state:
+            update_team("Blue", 0.0025)
+            display_message(f"{team} Team \n{dom_time // 60:02d}:{dom_time % 60:02d}")
+            print(f"{team} point control")
         if monotonic() - clock >= 1:
-            if dom_time_started == True:
+            if timer_state:
                 dom_time -= 1
-                display_message(
-                    f"{team} Team\n{dom_time // 60:02d}:{dom_time % 60:02d}"
-                )
+                dom_time_str = f"{dom_time // 60:02d}:{dom_time % 60:02d}"
+            display_message(f"{team} Team\n{dom_time_str}")
             clock = monotonic()
-        if REDB.long_press:
-            team = "Red"
-            RED_LED.value = True
-            BLUE_LED.value = False
-            display_message(f"{team} Team \n{dom_time // 60:02d}:{dom_time % 60:02d}")
-            rgb_control(team, "chase", 0.0025)
-            print(f"{team} point control")
-        elif BLUEB.long_press:
-            team = "Blue"
-            RED_LED.value = False
-            BLUE_LED.value = True
-            display_message(f"{team} Team \n{dom_time // 60:02d}:{dom_time % 60:02d}")
-            rgb_control(team, "chase", 0.0025)
-            print(f"{team} point control")
-        if ENCB.short_count != 0:
-            dom_time_started = not dom_time_started
+        if ENCB.short_count > 1:
+            timer_state = not timer_state
             sleep(0.1)
         if ENCB.long_press:
             break
     display_message(f"{team} Team\nPoint Locked")
-    while True:
+    while ENCB.value:
         ENCB.update()
         rgb_control(team)
+        ENCB.update()
         rgb_control("Off")
-        if ENCB.short_count != 0:
-            break
-    sleep(0.5)
+    sleep(0.1)
     display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
     rgb_control("Off")
     while ENC.value:
@@ -430,7 +399,7 @@ def start_domination_2_timer(game_mode):
             last_position = position
             display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
     if restart_index == 0:
-        rgb_control("Green")
+        update_team("Green")
         standby_screen(game_mode)
     elif restart_index == 1:
         main_menu()
@@ -439,16 +408,13 @@ def start_domination_2_timer(game_mode):
 def start_domination_3_timer(game_mode):
     """Function for Domination v3 timer"""
     sleep(0.5)
-    global position, last_position, restart_index, team
+    global position, last_position, restart_index, team, timer_state
     red_time, blue_time = game_length, game_length
     red_time_str = f"{red_time // 60:02d}:{red_time % 60:02d}"
     blue_time_str = f"{blue_time // 60:02d}:{blue_time % 60:02d}"
-    team = "Green"
-    timer_state = "Green"
-    RED_LED.value = False
-    BLUE_LED.value = False
+    timer_state = True
     display_message(f"RED: {red_time_str}\nBLUE: {blue_time_str}")
-    rgb_control(team, "chase")
+    update_team("Green")
     sleep(0.5)
     while RED.value and BLUE.value:
         REDB.update()
@@ -459,47 +425,35 @@ def start_domination_3_timer(game_mode):
         ENCB.update()
         REDB.update()
         BLUEB.update()
-        if REDB.long_press and team != "Red":
-            team = "Red"
-            rgb_control(team, "chase", 0.0025)
-            RED_LED.value = True
-            BLUE_LED.value = False
+        if REDB.long_press and team != "Red" and timer_state:
+            update_team("Red", 0.0025)
             print("red timer started")
-        elif BLUEB.long_press and team != "Blue":
-            team = "Blue"
-            rgb_control(team, "chase", 0.0025)
-            RED_LED.value = False
-            BLUE_LED.value = True
+        elif BLUEB.long_press and team != "Blue" and timer_state:
+            update_team("Blue", 0.0025)
             print("blue timer started")
         if monotonic() - clock >= 1:
-            if team == "Red":
-                red_time -= 1
-                red_time_str = f"{red_time // 60:02d}:{red_time % 60:02d}"
-            elif team == "Blue":
-                blue_time -= 1
-                blue_time_str = f"{blue_time // 60:02d}:{blue_time % 60:02d}"
-            if team != "Green":
-                display_message(f"RED:  {red_time_str}\nBLUE: {blue_time_str}")
+            if timer_state:
+                if team == "Red":
+                    red_time -= 1
+                    red_time_str = f"{red_time // 60:02d}:{red_time % 60:02d}"
+                elif team == "Blue":
+                    blue_time -= 1
+                    blue_time_str = f"{blue_time // 60:02d}:{blue_time % 60:02d}"
+            display_message(f"RED:  {red_time_str}\nBLUE: {blue_time_str}")
             clock = monotonic()
-        if ENCB.short_count != 0:
-            if team == "Red" or team == "Blue":
-                timer_state = team
-                team = "Green"
-            else:
-                team = timer_state
-                timer_state = "Green"
-            sleep(0.1)
+        if ENCB.short_count > 1:
+            timer_state = not timer_state
         if ENCB.long_press:
             break
     display_message(f"{team} Team\nPoint Locked")
     while True:
         ENCB.update()
-        rgb_control(team, "chase")
-        rgb_control("Off", "chase")
+        rgb_control(team)
+        rgb_control("Off")
         if ENCB.short_count != 0:
             break
     sleep(0.5)
-    rgb_control("Off", "chase")
+    rgb_control("Off")
     display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
     while ENC.value:
         position = ENCODER.position
@@ -511,7 +465,7 @@ def start_domination_3_timer(game_mode):
             last_position = position
             display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
     if restart_index == 0:
-        rgb_control("Green", "chase")
+        rgb_control("Green")
         RED_LED.value = False
         BLUE_LED.value = False
         standby_screen(game_mode)
@@ -521,24 +475,23 @@ def start_domination_3_timer(game_mode):
 
 def start_basic_timer(game_mode):
     sleep(0.5)
-    global position, last_position, restart_index
+    global position, last_position, restart_index, timer_state
     basic_time = game_length
-    basic_timer_started = True
     display_message(f"{basic_time // 60:02d}:{basic_time % 60:02d}")
     clock = monotonic()
     while basic_time > 0:
         ENCB.update()
         if monotonic() - clock >= 1:
-            if basic_timer_started:
+            if timer_state:
                 basic_time -= 1
-            if basic_time < 11:
-                play_track(basic_time + 15)
+                if basic_time < 11:
+                    play_track(basic_time + 15)
             display_message(f"{basic_time // 60:02d}:{basic_time % 60:02d}")
             clock = monotonic()
-        if basic_time == 30:
+        if basic_time == 30 and timer_state:
             play_track(26)
         if ENCB.short_count != 0:
-            basic_timer_started = not basic_timer_started
+            timer_state = not timer_state
         if ENCB.long_press:
             break
     sleep(0.5)
@@ -553,7 +506,7 @@ def start_basic_timer(game_mode):
             last_position = position
             display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
     if restart_index == 0:
-        rgb_control("Green", "chase")
+        rgb_control("Green")
         standby_screen(game_mode)
     elif restart_index == 1:
         main_menu()

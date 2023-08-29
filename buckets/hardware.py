@@ -19,10 +19,8 @@ for addr in [0x27, 0x3F]:
     try:
         pcf_interface = I2CPCF8574Interface(lcd_i2c, addr)
     except ValueError:
-        print("LCD is not", hex(addr))
         continue
     else:
-        print("LCD is", hex(addr))
         break
 DISPLAY = LCD(pcf_interface, num_rows=2, num_cols=16)
 

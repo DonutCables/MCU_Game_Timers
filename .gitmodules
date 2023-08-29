@@ -1,3 +1,6 @@
 [submodule "Game_Timer_Refs"]
 	path = Game_Timer_Refs
 	url = git@github.com:DonutCables/Game_Timer_Refs.git
+[submodule "Game_Timer_Kicad_Files"]
+	path = Game_Timer_Kicad_Files
+	url = git@github.com:DonutCables/Game_Timer_Kicad_Files.git

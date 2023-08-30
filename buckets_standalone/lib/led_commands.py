@@ -2,6 +2,7 @@
 Layer for cleaner control of RGB output
 """
 from hardware import RGB_LED
+from random import randint
 from time import sleep
 
 
@@ -22,6 +23,24 @@ def rgb_control(color="Off", pattern="chase", delay=0.005):
     elif pattern == "chase":
         for i in range(RGB_LED.n):
             RGB_LED[i] = COLOR[color]
+            sleep(delay)
+            RGB_LED.show()
+    elif pattern == "chase_off_on":
+        for i in range(RGB_LED.n):
+            RGB_LED[i] = COLOR["Off"]
+            sleep(delay)
+            RGB_LED.show()
+        for i in range(RGB_LED.n):
+            RGB_LED[i] = COLOR[color]
+            sleep(delay)
+            RGB_LED.show()
+    elif pattern == "chase_on_off":
+        for i in range(RGB_LED.n):
+            RGB_LED[i] = COLOR[color]
+            sleep(delay)
+            RGB_LED.show()
+        for i in range(RGB_LED.n):
+            RGB_LED[i] = COLOR["Off"]
             sleep(delay)
             RGB_LED.show()
     elif pattern == "single_blink":

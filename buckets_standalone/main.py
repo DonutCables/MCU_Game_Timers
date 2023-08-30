@@ -19,15 +19,7 @@ from led_commands import rgb_control
 # Setting initial variables for use
 position = ENCODER.position
 last_position = position
-MENU = [
-    "Attrition",
-    "Basic Timer",
-    "Control",
-    "Death Clicks",
-    "Domination 2",
-    "Domination 3",
-    "KotH",
-]
+MENUD = {}
 menu_index = 0
 RESTART_OPTIONS = ["Yes", "No"]
 restart_index = 0
@@ -79,20 +71,23 @@ def main_menu():
     """Main menu for scrolling and displaying game options"""
     global position, last_position, menu_index, team, timer_state
     last_position = position
+    timer_state = True
+    menul = list(MENUD.keys())
+    menul.sort()
     display_message(EXTRAS[randint(0, len(EXTRAS) - 1)])
     rgb_control("Off", "solid")
     for color in ["Red", "Blue"]:
         rgb_control(color)
-    timer_state = True
-    display_message(f"Select a game:\n{MENU[menu_index]}")
+    display_message(f"Select a game:\n{menul[menu_index]}")
     update_team("Green")
     sleep(0.5)
     while ENC.value:
         position = ENCODER.position
         if position != last_position:
-            menu_index = encoder_handler(menu_index, 1) % len(MENU)
-            display_message(f"Select a game:\n{MENU[menu_index]}")
-    run_program(MENU[menu_index])
+            menu_index = encoder_handler(menu_index, 1) % len(menul)
+            print(menu_index)
+            display_message(f"Select a game:\n{menul[menu_index]}")
+    run_program(menul[menu_index])
 
 
 def run_program(menu_choice):
@@ -211,20 +206,7 @@ def standby_screen(game_mode):
         sleep(0.1)
     sleep(0.1)
     display_message(f"{game_mode}\nStarting...")
-    if game_mode == "Attrition":
-        start_attrition_counter(game_mode)
-    elif game_mode == "Basic Timer":
-        start_basic_timer(game_mode)
-    elif game_mode == "Control":
-        start_control_timer(game_mode)
-    elif game_mode == "Death Clicks":
-        start_dclicks_counter(game_mode)
-    elif game_mode == "Domination 2":
-        start_domination_2_timer(game_mode)
-    elif game_mode == "Domination 3":
-        start_domination_3_timer(game_mode)
-    elif game_mode == "KotH":
-        start_koth_timer(game_mode)
+    MENUD[game_mode](game_mode)
 
 
 def start_attrition_counter(game_mode):
@@ -492,6 +474,16 @@ def restart(game_mode):
     elif restart_index == 1:
         main_menu()
 
+
+MENUD = {
+    "Attrition": start_attrition_counter,
+    "Basic Timer": start_basic_timer,
+    "Control": start_control_timer,
+    "Death Clicks": start_dclicks_counter,
+    "Domination 2": start_domination_2_timer,
+    "Domination 3": start_domination_3_timer,
+    "KotH": start_koth_timer,
+}
 
 enable()
 

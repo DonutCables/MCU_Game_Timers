@@ -40,20 +40,27 @@ iopins = (
     board.GP15,  # Blue LED
 )
 
+# RGB strip setup
 led_count = 58
-RGB_LED = NeoPixel(iopins[0], led_count, brightness=1, auto_write=False)
+RGB_LED = NeoPixel(iopins[0], led_count, brightness=0.1, auto_write=False)
 
+# Encoder rotary setup
 ENCODER = IncrementalEncoder(iopins[1], iopins[2])
 
-ENC, RED, BLUE, RED_LED, BLUE_LED = (DigitalInOut(pin) for pin in iopins[3:])
+# Setup button DIO objects
+ENC, RED, BLUE = (DigitalInOut(pin) for pin in iopins[3:6])
 for button in [ENC, RED, BLUE]:
     button.switch_to_input(Pull.UP)
-# Create debouncer buttons for long-press functionality
-hold_duration = 1000  # Duration for long holds in ms
+
+# Create debouncer objects from DIO buttons
+hold_duration = 1000  # ms
 ENCB, REDB, BLUEB = (
     Button(ENC, long_duration_ms=2500),
     Button(RED, long_duration_ms=hold_duration),
     Button(BLUE, long_duration_ms=hold_duration),
 )
+
+# Team button LED setup
+RED_LED, BLUE_LED = (DigitalInOut(pin) for pin in iopins[6:8])
 for led in [RED_LED, BLUE_LED]:
     led.switch_to_output(False, DriveMode.PUSH_PULL)

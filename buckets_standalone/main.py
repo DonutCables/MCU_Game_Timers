@@ -193,6 +193,7 @@ def timer_screen(game_mode):
 def standby_screen(game_mode):
     """Pre-game confirmation screen"""
     sleep(0.5)
+    ENCB.update()
     game_length_str = f"{game_length // 60:02d}:{game_length % 60:02d}"
     cap_length_str = f"{cap_length // 60:02d}:{cap_length % 60:02d}"
     if game_mode == "Attrition":
@@ -211,6 +212,7 @@ def standby_screen(game_mode):
         ENCB.update()
     sleep(0.1)
     display_message(f"{game_mode}\nStarting...")
+    sleep(0.1)
     ENCB.update()
     MENUD[game_mode](game_mode)
 
@@ -230,6 +232,7 @@ def start_attrition_counter(game_mode):
         if ENCB.long_press:
             break
     display_message(f"{team} Lives Left\n{lives_attr}")
+    ENCB.update()
     while ENCB.value:
         ENCB.update()
         rgb_control(team, "chase_on_off")
@@ -244,6 +247,8 @@ def start_basic_timer(game_mode):
     global timer_state
     basic_time = game_length
     display_message(f"{basic_time // 60:02d}:{basic_time % 60:02d}")
+    play_track(28)
+    sleep(6)
     ENCB.update()
     clock = monotonic()
     while basic_time > 0:
@@ -308,6 +313,7 @@ def start_control_timer(game_mode):
         display_message(f"{game_mode} {control_time_str}\nPoint Locked")
     else:
         display_message(f"{game_mode} {control_time_str}\n{team} {cap_time_str}")
+    ENCB.update()
     while ENCB.value:
         ENCB.update()
         if cap_time == 0:
@@ -391,6 +397,7 @@ def start_domination_3_timer(game_mode):
     update_team("Green")
     sleep(0.5)
     while RED.value and BLUE.value:
+        ENCB.update()
         REDB.update()
         BLUEB.update()
     clock = monotonic()
@@ -438,6 +445,7 @@ def start_koth_timer(game_mode):
     update_team("Green")
     sleep(0.5)
     while REDB.value and BLUEB.value:
+        ENCB.update()
         REDB.update()
         BLUEB.update()
     clock = monotonic()
@@ -478,28 +486,28 @@ def restart(game_mode):
     """Function for restarting the program"""
     sleep(0.5)
     global position, last_position, restart_index, team
+    position = ENCODER.position
+    last_position = position
     rgb_control("Off")
     display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
-    sleep(0.5)
     ENCB.update()
+    sleep(0.5)
     while ENCB.value:
         ENCB.update()
         position = ENCODER.position
         if position != last_position:
             restart_index = encoder_handler(restart_index, 1) % len(RESTART_OPTIONS)
             display_message(f"Restart?:\n{RESTART_OPTIONS[restart_index]}")
-    sleep(0.1)
+    sleep(0.5)
+    ENCB.update()
     if restart_index == 0:
         if game_mode in ["KotH", "Domination 2", "Domination 3", "Basic Timer"]:
             update_team("Green")
-            ENCB.update()
             standby_screen(game_mode)
         elif game_mode in ["Attrition", "Control", "Death Clicks"]:
             update_team("Blue" if team == "Red" else "Red")
-            ENCB.update()
             standby_screen(game_mode)
     elif restart_index == 1:
-        ENCB.update()
         main_menu()
 
 

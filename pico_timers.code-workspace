@@ -12,27 +12,25 @@
 	],
 	"settings": {
 		"python.languageServer": "Pylance",
-		"python.linting.pylintEnabled": false,
 		"python.analysis.diagnosticSeverityOverrides": {
 			"reportMissingModuleSource": "none"
 		},
 		"python.analysis.extraPaths": [
-			"s:\\VSC\\data\\extensions\\joedevivo.vscode-circuitpython-0.1.20-win32-x64\\boards\\0x2E8A\\0x102E",
+			"s:\\VSC\\data\\extensions\\joedevivo.vscode-circuitpython-0.1.20-win32-x64\\boards\\0x239A\\0x8120",
 			"s:\\VSC\\data\\extensions\\joedevivo.vscode-circuitpython-0.1.20-win32-x64\\stubs",
-			"s:\\VSC\\data\\user-data\\User\\globalStorage\\joedevivo.vscode-circuitpython\\bundle\\20230829\\adafruit-circuitpython-bundle-py-20230829\\lib",
+			"s:\\VSC\\data\\user-data\\User\\globalStorage\\joedevivo.vscode-circuitpython\\bundle\\20230912\\adafruit-circuitpython-bundle-py-20230912\\lib",
 			"./lib",
 			"."
 		],
 		"circuitpython.board.version": "8.2.0",
-		"circuitpython.board.vid": "0x2E8A",
-		"circuitpython.board.pid": "0x102E",
+		"circuitpython.board.vid": "0x239A",
+		"circuitpython.board.pid": "0x8120",
 		"terminal.integrated.altClickMovesCursor": false,
 		"editor.formatOnSave": true,
-		"python.formatting.provider": "black",
 		"[python]": {
 			"editor.defaultFormatter": "ms-python.black-formatter"
 		},
 		"black-formatter.importStrategy": "useBundled",
-		"python.formatting.blackPath": "black"
+		"python.linting.pylintEnabled": false,
 	}
 }

@@ -1,3 +1,4 @@
+import asyncio
 from time import sleep, monotonic
 from gc import enable
 from random import randint
@@ -14,7 +15,7 @@ from hardware import (
     BLUEB,
 )
 from audio_commands import play_track, set_vol
-from led_commands import rgb_control
+from led_commands import RGB_Control, RGB_Settings
 
 # Setting initial variables for use
 position = ENCODER.position
@@ -36,7 +37,7 @@ EXTRAS = [
 ]
 
 
-class States:
+class Game_States:
     """
     Represents the state variables and settings for a game.
 
@@ -82,7 +83,9 @@ class States:
         self.blue_time_str = f"{self.blue_time // 60:02d}:{self.blue_time % 60:02d}"
 
 
-initial_state = States()
+initial_state = Game_States()
+leds = RGB_Control()
+led_state = RGB_Settings()
 
 
 ###
@@ -99,7 +102,7 @@ def update_team(teamp: str, speed=0.005, state=initial_state):
     state.team = teamp
     RED_LED.value = "Red" in teamp
     BLUE_LED.value = "Blue" in teamp
-    rgb_control(state.team, delay=speed)
+    led_state.update(teamp, delay=speed)
 
 
 def encoder_handler(x, y):
@@ -116,20 +119,31 @@ def encoder_handler(x, y):
         return x
 
 
+async def rgb_control(led_state):
+    """Async function for controlling RGB LEDs"""
+    while True:
+        if led_state.repeat > 0 or led_state.repeat == -1:
+            pattern = getattr(leds, led_state.pattern, "chase")
+            if callable(pattern):
+                pattern(led_state.color, led_state.delay)
+            if led_state.repeat > 0:
+                led_state.repeat -= 1
+        await asyncio.sleep(0.1)
+
+
 ###
 
 
-def main_menu():
+async def main_menu():
     """Main menu for scrolling and displaying game options"""
     global position, last_position
     last_position = position
     display_message(EXTRAS[randint(0, len(EXTRAS) - 1)])
-    rgb_control("Off", "solid")
-    for color in ["Red", "Blue"]:
-        rgb_control(color)
+    led_state.update(pattern="chase")
+    for color in ["Red", "Blue", "Green"]:
+        update_team(color)
+        await asyncio.sleep(0.75)
     display_message(f"Select a game:\n{MODES[initial_state.menu_index].name}")
-    update_team(initial_state.team)
-    sleep(0.5)
     ENCB.update()
     while ENCB.short_count < 1:
         ENCB.update()
@@ -139,26 +153,27 @@ def main_menu():
                 initial_state.menu_index, 1
             ) % len(MODES)
             display_message(f"Select a game:\n{MODES[initial_state.menu_index].name}")
-    sleep(0.1)
+        await asyncio.sleep(0.1)
+    await asyncio.sleep(0.1)
     ENCB.update()
-    run_program(MODES[initial_state.menu_index])
+    await run_program(MODES[initial_state.menu_index])
 
 
-def run_program(menu_choice):
+async def run_program(menu_choice):
     """Used to run a function when the respective menu item is selected"""
     display_message(f"Running:\n{menu_choice.name}")
-    sleep(1)
+    await asyncio.sleep(1)
     if menu_choice.has_lives:
-        counter_screen(menu_choice)
+        await counter_screen(menu_choice)
     elif menu_choice.has_team:
-        team_screen(menu_choice)
+        await team_screen(menu_choice)
     elif menu_choice.has_game_length:
-        timer_screen(menu_choice)
+        await timer_screen(menu_choice)
 
 
-def counter_screen(game_mode):
+async def counter_screen(game_mode):
     """Screen used to set lives for Attrition"""
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     global position, last_position
     position = ENCODER.position
     last_position = position
@@ -171,17 +186,18 @@ def counter_screen(game_mode):
                 0, encoder_handler(initial_state.lives_count, 1)
             )
             display_message(f"{game_mode.name}\nLives: {initial_state.lives_count}")
-    sleep(0.1)
+        await asyncio.sleep(0.1)
+    await asyncio.sleep(0.1)
     ENCB.update()
     if game_mode.has_team:
-        team_screen(game_mode)
+        await team_screen(game_mode)
     else:
-        standby_screen(game_mode)
+        await standby_screen(game_mode)
 
 
-def team_screen(game_mode):
+async def team_screen(game_mode):
     """Screen for selecting team counter for Attrition and Death Clicks"""
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     display_message(f"{game_mode.name}\nTeam:")
     while ENCB.short_count < 1:
         ENCB.update()
@@ -193,17 +209,18 @@ def team_screen(game_mode):
         if not BLUE.value:
             update_team("Blue", 0.0025)
             display_message(f"{game_mode.name}\nTeam {initial_state.team}")
-    sleep(0.1)
+        await asyncio.sleep(0.1)
+    await asyncio.sleep(0.1)
     ENCB.update()
     if game_mode.has_game_length:
-        timer_screen(game_mode)
+        await timer_screen(game_mode)
     else:
-        standby_screen(game_mode)
+        await standby_screen(game_mode)
 
 
-def timer_screen(game_mode):
+async def timer_screen(game_mode):
     """Screen used to set time for game modes with built in timers"""
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     global position, last_position
     position = ENCODER.position
     last_position = position
@@ -217,6 +234,7 @@ def timer_screen(game_mode):
             )
             initial_state.game_length_str = f"{initial_state.game_length // 60:02d}:{initial_state.game_length % 60:02d}"
             display_message(f"{game_mode.name}\nTime: {initial_state.game_length_str}")
+        await asyncio.sleep(0.1)
     if game_mode.has_cap_length:
         display_message(f"{game_mode.name}\nCap time: {initial_state.cap_length_str}")
         ENCB.update()
@@ -231,6 +249,7 @@ def timer_screen(game_mode):
                 display_message(
                     f"{game_mode.name}\nCap time: {initial_state.cap_length_str}"
                 )
+            await asyncio.sleep(0.1)
     if game_mode.has_checkpoint:
         display_message(f"{game_mode.name}\nCheckpoint: {initial_state.checkpoint}s")
         ENCB.update()
@@ -244,14 +263,15 @@ def timer_screen(game_mode):
                 display_message(
                     f"{game_mode.name}\nCheckpoint: {initial_state.checkpoint}s"
                 )
-    sleep(0.1)
+            await asyncio.sleep(0.1)
+    await asyncio.sleep(0.1)
     ENCB.update()
-    standby_screen(game_mode)
+    await standby_screen(game_mode)
 
 
-def standby_screen(game_mode):
+async def standby_screen(game_mode):
     """Pre-game confirmation screen"""
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     ENCB.update()
     display_message(
         game_mode.set_message(
@@ -261,50 +281,48 @@ def standby_screen(game_mode):
             initial_state.cap_length_str,
         )
     )
-    rgb_control("Off")
-    sleep(0.5)
+    led_state.update()
+    await asyncio.sleep(0.5)
     while ENCB.value:
         ENCB.update()
-    sleep(0.1)
+    await asyncio.sleep(0.1)
     display_message(f"{game_mode.name}\nStarting...")
-    sleep(0.1)
+    await asyncio.sleep(0.1)
     ENCB.update()
-    game_mode.run_final_function()
+    await game_mode.run_final_function()
 
 
-def start_attrition(game_mode):
+async def start_attrition(game_mode):
     """Function for Attrition game mode"""
     local_state = initial_state
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
-    rgb_control(local_state.team)
+    led_state.update(local_state.team)
     while local_state.lives_count > 0:
         ENCB.update()
         if not RED.value or not BLUE.value:
             local_state.lives_count -= 1
-            rgb_control(local_state.team, "chase_off_on", 0.001)
+            led_state.update(local_state.team, "chase_off_on", 0.001)
             display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
         if ENCB.long_press:
             break
+        await asyncio.sleep(0.1)
     display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
-    ENCB.update()
-    while ENCB.value:
-        ENCB.update()
-        rgb_control(local_state.team, "chase_on_off")
-    sleep(0.1)
-    ENCB.update()
-    restart(game_mode)
+    led_state.update(local_state.team, "chase_on_off", repeat=-1)
+    while not ENC.value:
+        await asyncio.sleep(0.025)
+    await restart(game_mode)
 
 
-def start_basic(game_mode):
+async def start_basic(game_mode):
     """Function for Basic Timer mode"""
     local_state = initial_state
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     display_message(
         f"{local_state.game_length // 60:02d}:{local_state.game_length % 60:02d}"
     )
     play_track(28)
-    sleep(6)
+    await asyncio.sleep(6)
     ENCB.update()
     clock = monotonic()
     while local_state.game_length > 0:
@@ -323,17 +341,17 @@ def start_basic(game_mode):
         if ENCB.short_count > 1:
             local_state.timer_state = not local_state.timer_state
         if ENCB.long_press:
-            rgb_control(local_state.team, "chase_on_off", 0.0025)
+            led_state.update(local_state.team, "chase_on_off", 0.0025)
             break
-    sleep(0.1)
+    await asyncio.sleep(0.1)
     ENCB.update()
-    restart(game_mode)
+    await restart(game_mode)
 
 
-def start_control(game_mode):
+async def start_control(game_mode):
     """Function for Control game mode"""
     local_state = initial_state
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     display_message(
         f"{game_mode.name} {local_state.game_length_str}\n{local_state.team} {local_state.cap_length_str}"
     )
@@ -350,10 +368,10 @@ def start_control(game_mode):
             local_state.cap_length = (
                 (local_state.cap_length - 1) // local_state.checkpoint + 1
             ) * local_state.checkpoint
-            rgb_control(delay=0.001)
+            led_state.update(delay=0.001)
         if REDB.fell or BLUEB.fell and local_state.timer_state:
             local_state.cap_state = True
-            rgb_control(local_state.team, delay=0.001)
+            led_state.update(local_state.team, delay=0.001)
         if monotonic() - clock >= 1:
             if local_state.timer_state:
                 local_state.game_length = max(0, local_state.game_length - 1)
@@ -375,43 +393,43 @@ def start_control(game_mode):
         display_message(
             f"{game_mode.name} {local_state.cap_length_str}\n{local_state.team} {local_state.cap_length_str}"
         )
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     ENCB.update()
     while ENCB.value:
         ENCB.update()
         if local_state.cap_length == 0:
-            rgb_control(local_state.team, "chase_on_off")
+            led_state.update(local_state.team, "chase_on_off")
         else:
-            rgb_control()
-    sleep(0.1)
+            led_state.update()
+    await asyncio.sleep(0.1)
     ENCB.update()
-    restart(game_mode)
+    await restart(game_mode)
 
 
-def start_deathclicks(game_mode):
+async def start_deathclicks(game_mode):
     """Function for Death Clicks game mode"""
     local_state = initial_state
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     display_message(f"{local_state.team} team\nDeaths {local_state.lives_count}")
-    rgb_control(local_state.team)
+    led_state.update(local_state.team)
     while not ENCB.long_press:
         ENCB.update()
         if not RED.value or not BLUE.value:
             local_state.lives_count += 1
-            rgb_control(local_state.team, "chase_off_on", 0.001)
+            led_state.update(local_state.team, "chase_off_on", 0.001)
             display_message(
                 f"{local_state.team} team\nDeaths {local_state.lives_count}"
             )
-    rgb_control(local_state.team, "chase_off_on", 0.0025)
-    sleep(0.5)
+    led_state.update(local_state.team, "chase_off_on", 0.0025)
+    await asyncio.sleep(0.1)
     ENCB.update()
-    restart(game_mode)
+    await restart(game_mode)
 
 
-def start_domination2(game_mode):
+async def start_domination2(game_mode):
     """Function for Domination v2 game mode"""
     local_state = initial_state
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     display_message(
         f"{local_state.team} Team\n{local_state.game_length // 60:02d}:{local_state.game_length % 60:02d}"
     )
@@ -441,28 +459,28 @@ def start_domination2(game_mode):
             clock = monotonic()
         if ENCB.short_count > 1:
             local_state.timer_state = not local_state.timer_state
-            sleep(0.1)
+            await asyncio.sleep(0.1)
         if ENCB.long_press:
             break
     display_message(f"{local_state.team} Team\nPoint Locked")
     while ENCB.value:
         ENCB.update()
-        rgb_control(local_state.team, "chase_on_off")
-    sleep(0.5)
+        led_state.update(local_state.team, "chase_on_off")
+    await asyncio.sleep(0.5)
     ENCB.update()
-    restart(game_mode)
+    await restart(game_mode)
 
 
-def start_domination3(game_mode):
+async def start_domination3(game_mode):
     """Function for Domination v3 game mode"""
     local_state = initial_state
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     local_state.timer_state = True
     display_message(
         f"RED: {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     update_team("Green", state=local_state)
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     while RED.value and BLUE.value:
         ENCB.update()
         REDB.update()
@@ -497,21 +515,21 @@ def start_domination3(game_mode):
     display_message(f"{local_state.team} Team\nPoint Locked")
     while ENCB.value:
         ENCB.update()
-        rgb_control(local_state.team, "chase_on_off")
-    sleep(0.5)
+        led_state.update(local_state.team, "chase_on_off")
+    await asyncio.sleep(0.5)
     ENCB.update()
-    restart(game_mode)
+    await restart(game_mode)
 
 
-def start_koth(game_mode):
+async def start_koth(game_mode):
     """Function for KotH timers"""
     local_state = initial_state
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     display_message(
         f"RED: {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     update_team("Green", state=local_state)
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     while REDB.value and BLUEB.value:
         ENCB.update()
         REDB.update()
@@ -548,21 +566,21 @@ def start_koth(game_mode):
     )
     while ENCB.value:
         ENCB.update()
-        rgb_control(local_state.team, "chase_on_off")
-    sleep(0.5)
+        led_state.update(local_state.team, "chase_on_off")
+    await asyncio.sleep(0.5)
     ENCB.update()
-    restart(game_mode)
+    await restart(game_mode)
 
 
-def restart(game_mode):
+async def restart(game_mode):
     """Function for restarting the program"""
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     global position, last_position, initial_state
     position = ENCODER.position
     last_position = position
-    rgb_control("Off")
+    led_state.update()
     display_message(f"Restart?:\n{RESTART_OPTIONS[initial_state.restart_index]}")
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     ENCB.update()
     while ENCB.value:
         ENCB.update()
@@ -574,18 +592,18 @@ def restart(game_mode):
             display_message(
                 f"Restart?:\n{RESTART_OPTIONS[initial_state.restart_index]}"
             )
-    sleep(0.5)
+    await asyncio.sleep(0.5)
     ENCB.update()
     if initial_state.restart_index == 0:
         if game_mode.has_team:
             update_team("Blue" if initial_state.team == "Red" else "Red")
-            standby_screen(game_mode)
+            await standby_screen(game_mode)
         else:
             update_team("Green")
-            standby_screen(game_mode)
+            await standby_screen(game_mode)
     elif initial_state.restart_index == 1:
-        initial_state = States()
-        main_menu()
+        initial_state = Game_States()
+        await main_menu()
 
 
 ###
@@ -600,7 +618,6 @@ class GameMode:
         has_game_length=False,
         has_cap_length=False,
         has_checkpoint=False,
-        message=None,
     ):
         self.name = name
         self.has_lives = has_lives
@@ -629,10 +646,13 @@ class GameMode:
             message = 2
         return self.display_messages[message]
 
-    def run_final_function(self):
+    async def run_final_function(self):
         final_func = globals().get(self.final_func_str, None)
         if callable(final_func):
-            final_func(self)
+            print(f"Running {self.final_func_str}")
+            await final_func(self)
+        else:
+            print(f"Function {self.final_func_str} not found")
 
 
 MODES = [
@@ -651,9 +671,17 @@ MODES = [
     GameMode("KotH", has_game_length=True),
 ]
 
+
 enable()
 
 set_vol(30)
 
+
+async def main():
+    rgb_task = asyncio.create_task(rgb_control(led_state))
+    game_task = asyncio.create_task(main_menu())
+    await asyncio.gather(game_task, rgb_task)
+
+
 if __name__ == "__main__":
-    main_menu()
+    asyncio.run(main())

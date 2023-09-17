@@ -9,6 +9,7 @@ from rotaryio import IncrementalEncoder
 from digitalio import DigitalInOut, Pull, DriveMode
 from neopixel import NeoPixel
 from adafruit_debouncer import Button
+from keypad import Keys
 from lcd import LCD
 from i2c_pcf8574_interface import I2CPCF8574Interface
 
@@ -42,7 +43,7 @@ iopins = (
 
 # RGB strip setup
 led_count = 58
-RGB_LED = NeoPixel(iopins[0], led_count, brightness=0.1, auto_write=False)
+RGB_LED = NeoPixel(iopins[0], led_count, brightness=1, auto_write=False)
 
 # Encoder rotary setup
 ENCODER = IncrementalEncoder(iopins[1], iopins[2])

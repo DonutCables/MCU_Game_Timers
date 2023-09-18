@@ -11,6 +11,10 @@
 		},
 		{
 			"path": "E:/"
+		},
+		{
+			"name": "Pico (W) Remote Workspace",
+			"uri": "pico:"
 		}
 	],
 	"settings": {
@@ -35,5 +39,6 @@
 		},
 		"black-formatter.importStrategy": "useBundled",
 		"python.linting.pylintEnabled": false,
+		"micropico.syncFolder": "buckets_ble_relay",
 	}
 }

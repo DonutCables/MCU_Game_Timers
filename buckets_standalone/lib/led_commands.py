@@ -1,3 +1,4 @@
+import asyncio
 from hardware import RGB_LED
 from random import randint
 from time import sleep
@@ -16,58 +17,56 @@ class RGB_Control:
         "Off": (0, 0, 0),
     }
 
-    def solid(self, color):
+    async def solid(self, color, delay):
         """Set the LED to a solid color"""
         self.RGB_LED.fill(self.COLOR[color])
         self.RGB_LED.show()
 
-    def chase(self, color, delay):
+    async def chase(self, color, delay):
         """Chase the LED with a specific color and delay"""
         for i in range(self.RGB_LED.n):
             self.RGB_LED[i] = self.COLOR[color]
-            sleep(delay)
+            await asyncio.sleep(delay)
             self.RGB_LED.show()
 
-    def chase_off_on(self, color, delay):
+    async def chase_off_on(self, color, delay):
         """Chase from off to the selected color"""
-        for i in range(self.RGB_LED.n):
-            self.RGB_LED[i] = self.COLOR["Off"]
-            sleep(delay)
-            self.RGB_LED.show()
-        for i in range(self.RGB_LED.n):
-            self.RGB_LED[i] = self.COLOR[color]
-            sleep(delay)
-            self.RGB_LED.show()
+        await self.chase("Off", delay)
+        await self.chase(color, delay)
 
-    def chase_on_off(self, color, delay):
+    async def chase_on_off(self, color, delay):
         """Chase from the selected color to off"""
-        for i in range(self.RGB_LED.n):
-            self.RGB_LED[i] = self.COLOR[color]
-            sleep(delay)
-            self.RGB_LED.show()
-        for i in range(self.RGB_LED.n):
-            self.RGB_LED[i] = self.COLOR["Off"]
-            sleep(delay)
-            self.RGB_LED.show()
+        await self.chase(color, delay)
+        await self.chase("Off", delay)
 
-    def single_blink(self, color, delay):
-        """Blink a single LED at a time"""
+    async def single_blink_on_off(self, color, delay):
+        """Blink a single LED on at a time"""
         for i in range(self.RGB_LED.n):
             self.RGB_LED[i] = self.COLOR[color]
             self.RGB_LED.show()
-            sleep(delay)
+            await asyncio.sleep(delay)
             self.RGB_LED[i] = self.COLOR["Off"]
             self.RGB_LED.show()
-            sleep(delay)
+            await asyncio.sleep(delay)
 
-    def all_blink(self, color, delay):
+    async def single_blink_off_on(self, color, delay):
+        """Blink a single LED off at a time"""
+        for i in range(self.RGB_LED.n):
+            self.RGB_LED[i] = self.COLOR["Off"]
+            self.RGB_LED.show()
+            await asyncio.sleep(delay)
+            self.RGB_LED[i] = self.COLOR[color]
+            self.RGB_LED.show()
+            await asyncio.sleep(delay)
+
+    async def all_blink(self, color, delay):
         """Blink all LEDs simultaneously"""
         self.RGB_LED.fill(self.COLOR[color])
         self.RGB_LED.show()
-        sleep(delay)
+        await asyncio.sleep(delay)
         self.RGB_LED.fill(self.COLOR["Off"])
         self.RGB_LED.show()
-        sleep(delay)
+        await asyncio.sleep(delay)
 
 
 class RGB_Settings:
@@ -78,19 +77,21 @@ class RGB_Settings:
         self.pattern = "chase"
         self.delay = 0.005
         self.repeat = 1
+        self.hold = False
 
     def state(self):
-        state = {
+        return {
             "color": self.color,
             "pattern": self.pattern,
             "delay": self.delay,
             "repeat": self.repeat,
+            "hold": self.hold,
         }
-        return state
 
-    def update(self, color="Off", pattern="chase", delay=0.005, repeat=1):
+    def update(self, color="Off", pattern="chase", delay=0.005, repeat=1, hold=False):
         """Update the RGB settings"""
         self.color = color
         self.pattern = pattern
         self.delay = delay
         self.repeat = repeat
+        self.hold = hold

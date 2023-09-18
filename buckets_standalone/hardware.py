@@ -27,7 +27,7 @@ for addr in [0x27, 0x3F]:
 DISPLAY = LCD(pcf_interface, num_rows=2, num_cols=16)
 
 # UART audio output
-AUDIO = UART(board.GP4, board.GP5, baudrate=9600)
+AUDIO_OUT = UART(board.GP4, board.GP5, baudrate=9600)
 
 # Initialize RGB and inputs
 iopins = (

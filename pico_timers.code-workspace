@@ -2,23 +2,10 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"path": "D:/"
-		},
-		{
-			"path": "../../../../media/donutcat/CIRCUITPY"
-		},
-		{
-			"path": "E:/"
-		},
-		{
-			"name": "Pico (W) Remote Workspace",
-			"uri": "pico:"
 		}
 	],
 	"settings": {
-		"python.languageServer": "Pylance",
+		"python.languageServer": "Jedi",
 		"python.analysis.diagnosticSeverityOverrides": {
 			"reportMissingModuleSource": "none"
 		},
@@ -39,6 +26,11 @@
 		},
 		"black-formatter.importStrategy": "useBundled",
 		"python.linting.pylintEnabled": false,
-		"micropico.syncFolder": "buckets_ble_relay",
+		"micropico.syncFolder": "",
+		"python.formatting.provider": "none",
+		"micropico.additionalSyncFolders": [
+			"buckets_standalone-upy",
+			"upy_import"
+		],
 	}
 }

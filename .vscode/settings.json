@@ -28,5 +28,11 @@
     "micropico.openOnStart": true,
     "python.analysis.typeshedPaths": [
         ".vscode\\Pico-W-Stub"
+    ],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "black-formatter.path": [
+        "black"
     ]
 }

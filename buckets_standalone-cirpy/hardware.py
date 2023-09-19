@@ -9,7 +9,6 @@ from rotaryio import IncrementalEncoder
 from digitalio import DigitalInOut, Pull, DriveMode
 from neopixel import NeoPixel
 from adafruit_debouncer import Button
-from keypad import Keys
 from lcd import LCD
 from i2c_pcf8574_interface import I2CPCF8574Interface
 

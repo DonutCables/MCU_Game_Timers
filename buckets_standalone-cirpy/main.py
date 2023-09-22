@@ -1,8 +1,8 @@
 try:  # If running in CircuitPython
     from asyncio import sleep, create_task, gather, run
-    from time import monotonic
+    from time import monotonic  # type: ignore
 except ImportError:  # If running in MicroPython
-    from uasyncio import sleep, create_task, gather, run
+    from uasyncio import sleep, create_task, gather, run  # type: ignore
     from hardware import monotonic
 
 from gc import enable, mem_free
@@ -52,16 +52,12 @@ class Game_States:
         lives_count (int): The number of lives remaining.
         team (str): The team name: "Red", "Blue", or "Green".
         game_length (int): The duration of the game in seconds.
-        game_length_str (str): A formatted string representation of game length.
         cap_length (int): The capture point length in seconds.
-        cap_length_str (str): A formatted string representation of cap length.
         checkpoint (int): The checkpoint value.
         timer_state (bool): The state of the timer (True for running, False for paused).
         cap_state (bool): The state of the capture.
         red_time (int): The remaining time for the red team.
-        red_time_str (str): A formatted string representation of red team time.
         blue_time (int): The remaining time for the blue team.
-        blue_time_str (str): A formatted string representation of blue team time.
     """
 
     def __init__(self):
@@ -111,26 +107,6 @@ class Game_States:
         self.red_time = 0
         self.blue_time = 0
 
-    def state(self):
-        """Returns the current state of the game"""
-        return {
-            "menu_index": self.menu_index,
-            "restart_index": self.restart_index,
-            "lives_count": self.lives_count,
-            "team": self.team,
-            "game_length": self.game_length,
-            "game_length_str": self.game_length_str,
-            "cap_length": self.cap_length,
-            "cap_length_str": self.cap_length_str,
-            "checkpoint": self.checkpoint,
-            "timer_state": self.timer_state,
-            "cap_state": self.cap_state,
-            "red_time": self.red_time,
-            "red_time_str": self.red_time_str,
-            "blue_time": self.blue_time,
-            "blue_time_str": self.blue_time_str,
-        }
-
 
 class ENC_States:
     """Class just to queue encoder presses through concurrent functions"""
@@ -173,7 +149,11 @@ def time_string(seconds):
 
 
 def display_message(message):
-    """Displays a string to the 1602 LCD"""
+    """
+    Displays a string to the 1602 LCD
+
+    Note: if a line is already 16chars when a n\\ is added, it will skip the next line
+    """
     DISPLAY.clear()
     DISPLAY.print(message)
 
@@ -228,7 +208,7 @@ async def main_menu():
     RGBS.update(pattern="solid")
     await sleep(0.5)
     for color in ["Red", "Blue", "Green"]:
-        update_team(color, "chase", hold=True)
+        update_team(color, hold=True)
         while RGBS.hold:
             await sleep(0)
     display_message(f"Select a game:\n{MODES[initial_state.menu_index].name}")
@@ -364,14 +344,7 @@ async def standby_screen(game_mode):
     while True:
         await sleep(0.5)
         ENCB.update()
-        display_message(
-            game_mode.set_message(
-                initial_state.lives_count,
-                initial_state.team,
-                initial_state.game_length_str,
-                initial_state.cap_length_str,
-            )
-        )
+        display_message(game_mode.set_message())
         RGBS.update()
         await sleep(0.5)
         while ENCB.value:
@@ -723,7 +696,7 @@ async def restart(game_mode):
     return
 
 
-def game_task_chain():
+async def game_task_chain():
     """Task chain for running the program"""
     while True:
         await main_menu()
@@ -751,23 +724,12 @@ class GameMode:
         self.has_checkpoint = has_checkpoint
         self.final_func_str = f"start_{self.name.replace(' ', '').lower()}"
 
-    def state(self):
-        return {
-            "name": self.name,
-            "has_lives": self.has_lives,
-            "has_team": self.has_team,
-            "has_game_length": self.has_game_length,
-            "has_cap_length": self.has_cap_length,
-            "has_checkpoint": self.has_checkpoint,
-            "final_func_str": self.final_func_str,
-        }
-
-    def set_message(self, lives=0, team="Green", length_str=0, cap_str=0):
+    def set_message(self):
         self.display_messages = {
-            1: f"{self.name} Ready\nTeam lives {lives}",
-            2: f"{self.name}\nReady {length_str}",
-            3: f"{self.name} Ready\n{team} {length_str} {cap_str}",
-            4: f"{self.name}\nReady Team {team}",
+            1: f"{self.name} Ready\nTeam lives {initial_state.lives_count}",
+            2: f"{self.name}\nReady {initial_state.game_length_str}",
+            3: f"{self.name} Ready\n{initial_state.team} {initial_state.game_length_str} {initial_state.cap_length_str}",
+            4: f"{self.name}\nReady Team {initial_state.team}",
         }
         message = 1
         if self.has_lives:

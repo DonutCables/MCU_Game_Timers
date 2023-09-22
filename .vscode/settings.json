@@ -1,5 +1,5 @@
 {
-    "python.languageServer": "Pylance",
+    "python.languageServer": "Default",
     "python.linting.pylintEnabled": false,
     "python.analysis.diagnosticSeverityOverrides": {
         "reportMissingModuleSource": "none",
@@ -29,10 +29,11 @@
     "python.analysis.typeshedPaths": [
         ".vscode\\Pico-W-Stub"
     ],
-    "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter"
-    },
     "black-formatter.path": [
         "black"
-    ]
+    ],
+    "[python]": {
+        "editor.formatOnType": false,
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    }
 }

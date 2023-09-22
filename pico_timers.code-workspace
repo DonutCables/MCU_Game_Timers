@@ -5,7 +5,7 @@
 		}
 	],
 	"settings": {
-		"python.languageServer": "Jedi",
+		"python.languageServer": "Default",
 		"python.analysis.diagnosticSeverityOverrides": {
 			"reportMissingModuleSource": "none"
 		},
@@ -32,5 +32,6 @@
 			"buckets_standalone-upy",
 			"upy_import"
 		],
+		"editor.defaultFormatter": "ms-python.black-formatter",
 	}
 }

@@ -1,5 +1,5 @@
 try:  # If running in CircuitPython
-    from asyncio import sleep, create_task, gather, run
+    from asyncio import sleep, create_task, gather, run, Event
     from time import monotonic  # type: ignore
 except ImportError:  # If running in MicroPython
     from uasyncio import sleep, create_task, gather, run  # type: ignore
@@ -109,20 +109,45 @@ class Game_States:
 
 
 class ENC_States:
-    """Class just to queue encoder presses through concurrent functions"""
+    """Manages encoder pressed state and rotation"""
 
-    def __init__(self):
-        self.was_pressed = False
+    def __init__(self, enc=ENC, encoder=ENCODER):
+        self.enc = enc
+        self.encoder = encoder
+        self._was_pressed = Event()
+        self.last_position = self.encoder.position
+        self._was_rotated = Event()
+
+    """@property
+    def was_pressed(self):
+        if self._was_pressed:
+            self._was_pressed = False
+            return True"""
 
     async def update(self):
-        """Updates the state of the encoder"""
+        """Updates the pressed state of the encoder"""
         while True:
-            if not ENC.value and not self.was_pressed:
-                self.was_pressed = True
+            if not self.enc.value and not self._was_pressed.is_set():
+                self._was_pressed.set()
+                await sleep(0.2)
+            if (
+                self.encoder.position != self.last_position
+                and not self._was_rotated.is_set()
+            ):
+                self._was_rotated.set()
             await sleep(0)
 
-    def reset(self):
-        self.was_pressed = False
+    def encoder_handler(self, x, y):
+        """Handles encoder rotation"""
+        while True:
+            if self.encoder.position > self.last_position:
+                self.last_position = self.encoder.position
+                self._was_rotated.clear()
+                return x + y
+            elif self.encoder.position < self.last_position:
+                self.last_position = self.encoder.position
+                self._was_rotated.clear()
+                return x - y
 
 
 initial_state = Game_States()
@@ -168,18 +193,13 @@ def update_team(
     RGBS.update(team, pattern, delay, hold=hold)
 
 
-def encoder_handler(x, y):
-    """Handles encoder rotation"""
-    global position, last_position
-    if position > last_position:
-        last_position = position
-        return x + y
-    elif position < last_position:
-        last_position = position
-        return x - y
-    else:
-        last_position = position
-        return x
+async def button_monitor():
+    """Async function for monitoring button presses"""
+    while True:
+        ENCB.update()
+        REDB.update()
+        BLUEB.update()
+        await sleep(0)
 
 
 async def rgb_control():
@@ -201,9 +221,6 @@ async def rgb_control():
 
 async def main_menu():
     """Main menu for scrolling and displaying game options"""
-    global position, last_position
-    last_position = position
-    ENCS.reset()
     display_message(EXTRAS[randint(0, len(EXTRAS) - 1)])
     RGBS.update(pattern="solid")
     await sleep(0.5)
@@ -212,17 +229,17 @@ async def main_menu():
         while RGBS.hold:
             await sleep(0)
     display_message(f"Select a game:\n{MODES[initial_state.menu_index].name}")
-    ENCS.reset()
-    while not ENCS.was_pressed:
-        position = ENCODER.position
-        if position != last_position:
-            initial_state.menu_index = encoder_handler(
+    while True:
+        if ENCS._was_rotated.is_set():
+            initial_state.menu_index = ENCS.encoder_handler(
                 initial_state.menu_index, 1
             ) % len(MODES)
             display_message(f"Select a game:\n{MODES[initial_state.menu_index].name}")
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
+            break
         await sleep(0)
     await sleep(0.1)
-    ENCB.update()
     await run_program(MODES[initial_state.menu_index])
 
 
@@ -241,21 +258,18 @@ async def run_program(menu_choice):
 async def counter_screen(game_mode):
     """Screen used to set lives for Attrition"""
     await sleep(0.5)
-    global position, last_position
-    position = ENCODER.position
-    last_position = position
     display_message(f"{game_mode.name} \nLives: {initial_state.lives_count}")
-    while ENCB.short_count < 1:
-        ENCB.update()
-        position = ENCODER.position
-        if position != last_position:
+    while True:
+        if ENCS._was_rotated.is_set():
             initial_state.lives_count = max(
-                0, encoder_handler(initial_state.lives_count, 1)
+                0, ENCS.encoder_handler(initial_state.lives_count, 1)
             )
             display_message(f"{game_mode.name}\nLives: {initial_state.lives_count}")
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
+            break
         await sleep(0)
     await sleep(0.1)
-    ENCB.update()
     if game_mode.has_team:
         await team_screen(game_mode)
     else:
@@ -266,21 +280,20 @@ async def team_screen(game_mode):
     """Screen for selecting team counter for Attrition and Death Clicks"""
     await sleep(0.5)
     display_message(f"{game_mode.name}\nTeam:")
-    while ENCB.short_count < 1:
-        ENCB.update()
-        REDB.update()
-        BLUEB.update()
-        if not RED.value:
+    while True:
+        if REDB.rose:
             update_team("Red", delay=0.0025)
             display_message(f"{game_mode.name}\nTeam {initial_state.team}")
             await sleep(0.1)
-        if not BLUE.value:
+        if BLUEB.rose:
             update_team("Blue", delay=0.0025)
             display_message(f"{game_mode.name}\nTeam {initial_state.team}")
             await sleep(0.1)
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
+            break
         await sleep(0)
     await sleep(0.1)
-    ENCB.update()
     if game_mode.has_game_length:
         await timer_screen(game_mode)
     else:
@@ -290,49 +303,46 @@ async def team_screen(game_mode):
 async def timer_screen(game_mode):
     """Screen used to set time for game modes with built in timers"""
     await sleep(0.5)
-    global position, last_position
-    position = ENCODER.position
-    last_position = position
     display_message(f"{game_mode.name}\nTime: {initial_state.game_length_str}")
-    while ENCB.short_count < 1:
-        ENCB.update()
-        position = ENCODER.position
-        if position != last_position:
+    while True:
+        if ENCS._was_rotated.is_set():
             initial_state.game_length = max(
-                0, encoder_handler(initial_state.game_length, 15)
+                0, ENCS.encoder_handler(initial_state.game_length, 15)
             )
             display_message(f"{game_mode.name}\nTime: {initial_state.game_length_str}")
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
+            break
         await sleep(0)
     if game_mode.has_cap_length:
         display_message(f"{game_mode.name}\nCap time: {initial_state.cap_length_str}")
-        ENCB.update()
-        while ENCB.short_count < 1:
-            ENCB.update()
-            position = ENCODER.position
-            if position != last_position:
+        while True:
+            if ENCS._was_rotated.is_set():
                 initial_state.cap_length = max(
-                    0, encoder_handler(initial_state.cap_length, 5)
+                    0, ENCS.encoder_handler(initial_state.cap_length, 5)
                 )
                 display_message(
                     f"{game_mode.name}\nCap time: {initial_state.cap_length_str}"
                 )
+            if ENCS._was_pressed.is_set():
+                ENCS._was_pressed.clear()
+                break
             await sleep(0)
     if game_mode.has_checkpoint:
         display_message(f"{game_mode.name}\nCheckpoint: {initial_state.checkpoint}s")
-        ENCB.update()
-        while ENCB.short_count < 1:
-            ENCB.update()
-            position = ENCODER.position
-            if position != last_position:
+        while True:
+            if ENCS._was_rotated.is_set():
                 initial_state.checkpoint = max(
-                    0, encoder_handler(initial_state.checkpoint, 1)
+                    0, ENCS.encoder_handler(initial_state.checkpoint, 1)
                 )
                 display_message(
                     f"{game_mode.name}\nCheckpoint: {initial_state.checkpoint}s"
                 )
+            if ENCS._was_pressed.is_set():
+                ENCS._was_pressed.clear()
+                break
             await sleep(0)
     await sleep(0.1)
-    ENCB.update()
     await standby_screen(game_mode)
 
 
@@ -343,13 +353,13 @@ async def standby_screen(game_mode):
     """
     while True:
         await sleep(0.5)
-        ENCB.update()
         display_message(game_mode.set_message())
         RGBS.update()
         await sleep(0.5)
-        while ENCB.value:
-            ENCB.update()
-            await sleep(0)
+        while True:
+            if ENCS._was_pressed.is_set():
+                ENCS._was_pressed.clear()
+                break
         display_message(f"{game_mode.name}\nStarting...")
         await sleep(0.1)
         ENCB.update()
@@ -380,10 +390,9 @@ async def start_attrition(game_mode):
     RGBS.update(local_state.team, "chase_on_off", repeat=-1)
     display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
     await sleep(0.1)
-    ENCS.reset()
     while True:
-        if ENCS.was_pressed:
-            ENCS.reset()
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
             break
         await sleep(0)
     await sleep(0.1)
@@ -434,9 +443,6 @@ async def start_control(game_mode):
     while (local_state.game_length > 0 and not local_state.cap_state) or (
         local_state.cap_length > 0 and local_state.cap_state
     ):
-        ENCB.update()
-        REDB.update()
-        BLUEB.update()
         if REDB.rose or BLUEB.rose and local_state.timer_state:
             local_state.cap_state = False
             local_state.cap_length = (
@@ -472,10 +478,9 @@ async def start_control(game_mode):
         RGBS.update(local_state.team, "chase_on_off", repeat=-1)
     else:
         RGBS.update()
-    ENCS.reset()
     while True:
-        if ENCS.was_pressed:
-            ENCS.reset()
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
             break
         await sleep(0)
     await sleep(0.1)
@@ -513,9 +518,6 @@ async def start_domination2(game_mode):
     update_team(state=local_state)
     clock = monotonic()
     while local_state.game_length > 0:
-        ENCB.update()
-        REDB.update()
-        BLUEB.update()
         if REDB.long_press and local_state.timer_state:
             update_team("Red", delay=0.0025, state=local_state)
             display_message(f"{local_state.team} Team \n{local_state.game_length_str}")
@@ -537,10 +539,9 @@ async def start_domination2(game_mode):
         await sleep(0)
     display_message(f"{local_state.team} Team\nPoint Locked")
     RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    ENCS.reset()
     while True:
-        if ENCS.was_pressed:
-            ENCS.reset()
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
             break
         await sleep(0)
     await sleep(0.1)
@@ -561,15 +562,9 @@ async def start_domination3(game_mode):
     update_team(state=local_state)
     await sleep(0.5)
     while RED.value and BLUE.value:
-        ENCB.update()
-        REDB.update()
-        BLUEB.update()
         await sleep(0)
     clock = monotonic()
     while local_state.red_time > 0 and local_state.blue_time > 0:
-        ENCB.update()
-        REDB.update()
-        BLUEB.update()
         if REDB.long_press and local_state.team != "Red" and local_state.timer_state:
             update_team("Red", delay=0.0025, state=local_state)
         elif (
@@ -593,10 +588,9 @@ async def start_domination3(game_mode):
         await sleep(0)
     display_message(f"{local_state.team} Team\nPoint Locked")
     RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    ENCS.reset()
     while True:
-        if ENCS.was_pressed:
-            ENCS.reset()
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
             break
         await sleep(0)
     await sleep(0.1)
@@ -617,15 +611,9 @@ async def start_koth(game_mode):
     update_team(state=local_state)
     await sleep(0.5)
     while REDB.value and BLUEB.value:
-        ENCB.update()
-        REDB.update()
-        BLUEB.update()
         await sleep(0)
     clock = monotonic()
     while local_state.red_time > 0 and local_state.blue_time > 0:
-        ENCB.update()
-        REDB.update()
-        BLUEB.update()
         if not RED.value and local_state.team != "Red" and local_state.timer_state:
             update_team("Red", delay=0.0025, state=local_state)
             print(f"{local_state.team} timer started")
@@ -651,10 +639,9 @@ async def start_koth(game_mode):
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    ENCS.reset()
     while True:
-        if ENCS.was_pressed:
-            ENCS.reset()
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
             break
         await sleep(0)
     await sleep(0.1)
@@ -665,26 +652,23 @@ async def start_koth(game_mode):
 async def restart(game_mode):
     """Function for restarting the program"""
     await sleep(0.5)
-    global position, last_position
-    position = ENCODER.position
-    last_position = position
     RGBS.update()
     display_message(f"Restart?:\n{RESTART_OPTIONS[initial_state.restart_index]}")
     await sleep(0.5)
-    ENCS.reset()
-    while not ENCS.was_pressed:
+    while True:
         ENCB.update()
-        position = ENCODER.position
-        if position != last_position:
-            initial_state.restart_index = encoder_handler(
+        if ENCS._was_rotated.is_set():
+            initial_state.restart_index = ENCS.encoder_handler(
                 initial_state.restart_index, 1
             ) % len(RESTART_OPTIONS)
             display_message(
                 f"Restart?:\n{RESTART_OPTIONS[initial_state.restart_index]}"
             )
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
+            break
         await sleep(0)
     await sleep(0.5)
-    ENCS.reset()
     ENCB.update()
     print(mem_free())
     if initial_state.restart_index == 1:
@@ -776,8 +760,9 @@ SOUND.set_vol(30)
 async def main():
     rgb_task = create_task(rgb_control())
     enc_task = create_task(ENCS.update())
+    button_task = create_task(button_monitor())
     game_task = create_task(game_task_chain())
-    await gather(game_task, rgb_task, enc_task)
+    await gather(game_task, rgb_task, enc_task, button_task)
 
 
 if __name__ == "__main__":

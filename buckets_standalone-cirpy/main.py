@@ -5,7 +5,7 @@ except ImportError:  # If running in MicroPython
     from uasyncio import sleep, create_task, gather, run  # type: ignore
     from hardware import monotonic
 
-from gc import enable, mem_free
+from gc import enable, mem_free # type: ignore
 from random import randint
 from hardware import (
     DISPLAY,

@@ -42,7 +42,7 @@ iopins = (
 
 # RGB strip setup
 led_count = 58
-RGB_LED = NeoPixel(iopins[0], led_count, brightness=1, auto_write=False)  # type: ignore
+RGB_LED = NeoPixel(iopins[0], led_count, brightness=1, auto_write=False)
 
 # Encoder rotary setup
 ENCODER = IncrementalEncoder(iopins[1], iopins[2])

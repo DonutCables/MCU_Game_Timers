@@ -23,8 +23,6 @@ from audio_commands import Sound_Control
 from led_commands import RGB_Control, RGB_Settings
 
 # Setting initial variables for use
-position = ENCODER.position
-last_position = position
 MODES = []
 RESTART_OPTIONS = ["No", "Yes"]
 EXTRAS = [

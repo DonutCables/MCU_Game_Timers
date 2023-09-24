@@ -32,17 +32,8 @@
 		},
 		"black-formatter.importStrategy": "fromEnvironment",
 		"python.linting.pylintEnabled": false,
-		"micropico.syncFolder": "",
-		"python.formatting.provider": "none",
-		"micropico.additionalSyncFolders": [
-			"buckets_standalone-upy",
-			"upy_import"
-		],
 		"black-formatter.path": [
-			"s:/Project/timers_project/pico_timers/.venv-cirpy/Scripts/black.exe"
-		],
-		"black-formatter.interpreter": [
-			"s:/Project/timers_project/pico_timers/.venv-cirpy/Scripts/python.exe"
+			"${workspaceFolder}/.venv-cirpy/Scripts/black"
 		],
 	}
 }

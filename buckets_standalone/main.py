@@ -106,6 +106,7 @@ class Game_States:
         self.blue_time = 0
 
 
+
 class ENC_States:
     """Manages encoder pressed state and rotation"""
 
@@ -115,12 +116,6 @@ class ENC_States:
         self._was_pressed = Event()
         self.last_position = self.encoder.position
         self._was_rotated = Event()
-
-    """@property
-    def was_pressed(self):
-        if self._was_pressed:
-            self._was_pressed = False
-            return True"""
 
     async def update(self):
         """Updates the pressed state of the encoder"""
@@ -178,7 +173,7 @@ def display_message(message):
     Note: if a line is already 16chars when a n\\ is added, it will skip the next line
     """
     DISPLAY.clear()
-    DISPLAY.print(message)
+    DISPLAY.write(message)
 
 
 def update_team(
@@ -199,19 +194,6 @@ async def button_monitor():
         BLUEB.update()
         await sleep(0)
 
-
-async def rgb_control():
-    """Async function for controlling RGB LEDs"""
-    while True:
-        if RGBS.repeat > 0 or RGBS.repeat == -1:
-            pattern = getattr(RGB, RGBS.pattern, "chase")
-            if callable(pattern):
-                await pattern(RGBS.color, RGBS.delay)
-            if RGBS.repeat > 0:
-                RGBS.repeat -= 1
-                if RGBS.repeat == 0:
-                    RGBS.hold = False
-        await sleep(0)
 
 
 ###
@@ -358,8 +340,9 @@ async def standby_screen(game_mode):
             if ENCS._was_pressed.is_set():
                 ENCS._was_pressed.clear()
                 break
+            await sleep(0)
         display_message(f"{game_mode.name}\nStarting...")
-        await sleep(0.1)
+        await sleep(0)
         ENCB.update()
         await game_mode.run_final_function()
         if initial_state.restart_index == 0:
@@ -405,10 +388,8 @@ async def start_basictimer(game_mode):
     display_message(local_state.game_length_str)
     SOUND.play_track(28)
     await sleep(6)
-    ENCB.update()
     clock = monotonic()
     while local_state.game_length > 0:
-        ENCB.update()
         if monotonic() - clock >= 1:
             if local_state.timer_state:
                 local_state.game_length -= 1
@@ -425,7 +406,6 @@ async def start_basictimer(game_mode):
             break
         await sleep(0)
     await sleep(0.1)
-    ENCB.update()
     await restart(game_mode)
 
 
@@ -756,7 +736,7 @@ SOUND.set_vol(30)
 
 
 async def main():
-    rgb_task = create_task(rgb_control())
+    rgb_task = create_task(RGBS.rgb_control(RGB))
     enc_task = create_task(ENCS.update())
     button_task = create_task(button_monitor())
     game_task = create_task(game_task_chain())

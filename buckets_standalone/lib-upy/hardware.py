@@ -87,7 +87,7 @@ class LED_Wrapper:
                 self.pin.low()
 
 
-DISPLAY = DisplayWrapper()
+DISPLAY = DisplayWrapper(0, 1, [0x27, 0x3F], 2, 16)
 
 # UART audio output
 AUDIO_OUT = UART(1, tx=Pin(4), rx=Pin(5), baudrate=9600)

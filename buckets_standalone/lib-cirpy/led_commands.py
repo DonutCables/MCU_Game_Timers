@@ -1,7 +1,5 @@
-import asyncio
+from asyncio import sleep
 from hardware import RGB_LED
-from random import randint
-from time import sleep
 
 
 class RGB_Control:
@@ -26,8 +24,9 @@ class RGB_Control:
         """Chase the LED with a specific color and delay"""
         for i in range(self.RGB_LED.n):
             self.RGB_LED[i] = self.COLOR[color]
-            await asyncio.sleep(delay)
+            await sleep(delay)
             self.RGB_LED.show()
+            await sleep(0)
 
     async def chase_off_on(self, color, delay):
         """Chase from off to the selected color"""
@@ -44,29 +43,29 @@ class RGB_Control:
         for i in range(self.RGB_LED.n):
             self.RGB_LED[i] = self.COLOR[color]
             self.RGB_LED.show()
-            await asyncio.sleep(delay)
+            await sleep(delay)
             self.RGB_LED[i] = self.COLOR["Off"]
             self.RGB_LED.show()
-            await asyncio.sleep(delay)
+            await sleep(delay)
 
     async def single_blink_off_on(self, color, delay):
         """Blink a single LED off at a time"""
         for i in range(self.RGB_LED.n):
             self.RGB_LED[i] = self.COLOR["Off"]
             self.RGB_LED.show()
-            await asyncio.sleep(delay)
+            await sleep(delay)
             self.RGB_LED[i] = self.COLOR[color]
             self.RGB_LED.show()
-            await asyncio.sleep(delay)
+            await sleep(delay)
 
     async def all_blink(self, color, delay):
         """Blink all LEDs simultaneously"""
         self.RGB_LED.fill(self.COLOR[color])
         self.RGB_LED.show()
-        await asyncio.sleep(delay)
+        await sleep(delay)
         self.RGB_LED.fill(self.COLOR["Off"])
         self.RGB_LED.show()
-        await asyncio.sleep(delay)
+        await sleep(delay)
 
 
 class RGB_Settings:
@@ -95,3 +94,16 @@ class RGB_Settings:
         self.delay = delay
         self.repeat = repeat
         self.hold = hold
+
+    async def rgb_control(self, rgb):
+        """Async function for controlling RGB LEDs"""
+        while True:
+            if self.repeat > 0 or self.repeat == -1:
+                pattern = getattr(rgb, self.pattern, "chase")
+                if callable(pattern):
+                    await pattern(self.color, self.delay)
+                if self.repeat > 0:
+                    self.repeat -= 1
+                    if self.repeat == 0:
+                        self.hold = False
+            await sleep(0)

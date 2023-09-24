@@ -8,6 +8,7 @@
 		}
 	],
 	"settings": {
+		"python.terminal.activateEnvironment": true,
 		"python.languageServer": "Pylance",
 		"python.analysis.diagnosticSeverityOverrides": {
 			"reportMissingModuleSource": "none"
@@ -29,7 +30,7 @@
 		"[python]": {
 			"editor.defaultFormatter": "ms-python.black-formatter"
 		},
-		"black-formatter.importStrategy": "useBundled",
+		"black-formatter.importStrategy": "fromEnvironment",
 		"python.linting.pylintEnabled": false,
 		"micropico.syncFolder": "",
 		"python.formatting.provider": "none",
@@ -37,7 +38,11 @@
 			"buckets_standalone-upy",
 			"upy_import"
 		],
-		"editor.defaultFormatter": "ms-python.black-formatter",
-		"micropico.softResetAfterUpload": true,
+		"black-formatter.path": [
+			"s:/Project/timers_project/pico_timers/.venv-cirpy/Scripts/black.exe"
+		],
+		"black-formatter.interpreter": [
+			"s:/Project/timers_project/pico_timers/.venv-cirpy/Scripts/python.exe"
+		],
 	}
 }

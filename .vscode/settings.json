@@ -1,4 +1,5 @@
 {
+    "python.terminal.activateEnvironment": true,
     "python.languageServer": "Default",
     "python.linting.pylintEnabled": false,
     "python.analysis.diagnosticSeverityOverrides": {
@@ -19,7 +20,7 @@
     "circuitpython.board.version": "8.2.0",
     "circuitpython.board.vid": "0x239A",
     "circuitpython.board.pid": "0x8120",
-    "black-formatter.importStrategy": "useBundled",
+    "black-formatter.importStrategy": "fromEnvironment",
     "python.formatting.provider": "black",
     "editor.formatOnSave": true,
     "python.linting.enabled": true,
@@ -29,11 +30,14 @@
     "python.analysis.typeshedPaths": [
         ".vscode\\Pico-W-Stub"
     ],
-    "black-formatter.path": [
-        "black"
-    ],
     "[python]": {
         "editor.formatOnType": false,
         "editor.defaultFormatter": "ms-python.black-formatter"
-    }
+    },
+    "black-formatter.interpreter": [
+        "s:/Project/timers_project/pico_timers/.venv-cirpy/Scripts/python.exe"
+    ],
+    "black-formatter.path": [
+        "s:/Project/timers_project/pico_timers/.venv-cirpy/Scripts/black.exe"
+    ]
 }

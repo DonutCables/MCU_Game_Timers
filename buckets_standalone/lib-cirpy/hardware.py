@@ -11,11 +11,17 @@ from neopixel import NeoPixel  # type: ignore
 from adafruit_debouncer import Button  # type: ignore
 from lcd_i2c8574_m import I2cLcd
 
+
 class DisplayWrapper:
     """Wrapper for I2C LCD display"""
 
     def __init__(
-        self, sda_pin=board.GP0, scl_pin=board.GP1, lcd_addresses=[0x27, 0x3F], rows=2, cols=16
+        self,
+        sda_pin=board.GP0,
+        scl_pin=board.GP1,
+        lcd_addresses=[0x27, 0x3F],
+        rows=2,
+        cols=16,
     ):
         self.i2c = I2C(scl_pin, sda_pin)
         self.display = None
@@ -42,6 +48,7 @@ class DisplayWrapper:
     def clear(self):
         if self.display is not None:
             self.display.clear()
+
 
 DISPLAY = DisplayWrapper(board.GP0, board.GP1, [0x27, 0x3F], 2, 16)
 

@@ -5,7 +5,7 @@ except ImportError:  # If running in MicroPython
     from uasyncio import sleep, create_task, gather, run  # type: ignore
     from hardware import monotonic
 
-from gc import enable, mem_free # type: ignore
+from gc import enable, mem_free  # type: ignore
 from random import randint
 from hardware import (
     DISPLAY,
@@ -106,7 +106,6 @@ class Game_States:
         self.blue_time = 0
 
 
-
 class ENC_States:
     """Manages encoder pressed state and rotation"""
 
@@ -193,7 +192,6 @@ async def button_monitor():
         REDB.update()
         BLUEB.update()
         await sleep(0)
-
 
 
 ###

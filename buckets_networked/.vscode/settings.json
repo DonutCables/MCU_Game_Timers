@@ -1,0 +1,39 @@
+{
+    "python.languageServer": "Default",
+    "python.linting.pylintEnabled": false,
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingModuleSource": "none",
+        "reportMissingImports": "none"
+    },
+    "python.analysis.extraPaths": [
+        "/home/donutcat/.vscode/extensions/joedevivo.vscode-circuitpython-0.1.20-linux-x64/boards/0x239A/0x8120",
+        "/home/donutcat/.vscode/extensions/joedevivo.vscode-circuitpython-0.1.20-linux-x64/stubs",
+        "/home/donutcat/.config/Code/User/globalStorage/joedevivo.vscode-circuitpython/bundle/20230711/adafruit-circuitpython-bundle-py-20230711/lib",
+        "s:\\VSC\\data\\extensions\\joedevivo.vscode-circuitpython-0.1.20-win32-x64\\boards\\0x239A\\0x8120",
+        "s:\\VSC\\data\\extensions\\joedevivo.vscode-circuitpython-0.1.20-win32-x64\\stubs",
+        "s:\\VSC\\data\\user-data\\User\\globalStorage\\joedevivo.vscode-circuitpython\\bundle\\20230524\\adafruit-circuitpython-bundle-py-20230524\\lib",
+        "./lib",
+        ".",
+        ".vscode\\Pico-W-Stub\\stubs"
+    ],
+    "circuitpython.board.version": "8.2.0",
+    "circuitpython.board.vid": "0x239A",
+    "circuitpython.board.pid": "0x8120",
+    "black-formatter.importStrategy": "useBundled",
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
+    "python.linting.enabled": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "micropico.syncFolder": "",
+    "micropico.openOnStart": true,
+    "python.analysis.typeshedPaths": [
+        ".vscode\\Pico-W-Stub"
+    ],
+    "black-formatter.path": [
+        "black"
+    ],
+    "[python]": {
+        "editor.formatOnType": false,
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    }
+}

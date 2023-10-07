@@ -80,11 +80,11 @@ for button in [ENC, RED, BLUE]:
     button.switch_to_input(Pull.UP)
 
 # Create debouncer objects from DIO buttons
-hold_duration = 1000  # ms
+hold_ms = 2000
 ENCB, REDB, BLUEB = (
-    Button(ENC, long_duration_ms=2500),
-    Button(RED, long_duration_ms=hold_duration),
-    Button(BLUE, long_duration_ms=hold_duration),
+    Button(ENC, long_duration_ms=hold_ms),
+    Button(RED, long_duration_ms=hold_ms),
+    Button(BLUE, long_duration_ms=hold_ms),
 )
 
 # Team button LED setup

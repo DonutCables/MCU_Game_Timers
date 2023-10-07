@@ -15,7 +15,12 @@ class DisplayWrapper:
     """Wrapper for I2C LCD display"""
 
     def __init__(
-        self, sda_pin=0, scl_pin=1, lcd_addresses=[0x27, 0x3F], rows=2, cols=16
+        self,
+        sda_pin=0,
+        scl_pin=1,
+        lcd_addresses=[0x27, 0x3F],
+        rows=2,
+        cols=16,
     ):
         self.i2c = I2C(0, sda=Pin(sda_pin), scl=Pin(scl_pin))
         self.display = None
@@ -116,7 +121,7 @@ ENC, RED, BLUE = (Button_Wrapper(pin) for pin in iopins[3:6])
 
 
 # Create debouncer objects from DIO buttons
-hold_ms = 1000
+hold_ms = 2000
 ENCB = Button(ENC, long_duration_ms=hold_ms)
 REDB = Button(RED, long_duration_ms=hold_ms)
 BLUEB = Button(BLUE, long_duration_ms=hold_ms)

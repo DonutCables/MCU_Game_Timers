@@ -77,7 +77,7 @@ class RGB_Settings:
         self.color = "Off"
         self.pattern = "chase"
         self.delay = 0.005
-        self.repeat = 1
+        self.repeat = 0
         self.hold = False
 
     def state(self):

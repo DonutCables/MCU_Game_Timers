@@ -341,7 +341,6 @@ async def standby_screen(game_mode):
             await sleep(0)
         display_message(f"{game_mode.name}\nStarting...")
         await sleep(0)
-        ENCB.update()
         await game_mode.run_final_function()
         if initial_state.restart_index == 0:
             break
@@ -357,12 +356,17 @@ async def start_attrition(game_mode):
     display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
     RGBS.update(local_state.team)
     while local_state.lives_count > 0:
-        ENCB.update()
-        if not RED.value or not BLUE.value:
+        if REDB.short_count > 0 or BLUEB.short_count > 0:
             local_state.lives_count -= 1
-            RGBS.update(local_state.team, "chase_off_on", 0.001)
             display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
-            await sleep(0.1)
+            RGBS.update(local_state.team, "chase_off_on", 0.001)
+            await sleep(0)
+        if REDB.long_press or BLUEB.long_press:
+            local_state.lives_count = min(
+                initial_state.lives_count, local_state.lives_count + 1
+            )
+            display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
+            await sleep(0)
         if ENCB.long_press:
             break
         await sleep(0)
@@ -375,7 +379,6 @@ async def start_attrition(game_mode):
             break
         await sleep(0)
     await sleep(0.1)
-    ENCB.update()
     await restart(game_mode)
 
 
@@ -414,7 +417,6 @@ async def start_control(game_mode):
     display_message(
         f"{game_mode.name} {local_state.game_length_str}\n{local_state.team} {local_state.cap_length_str}"
     )
-    ENCB.update()
     clock = monotonic()
     while (local_state.game_length > 0 and not local_state.cap_state) or (
         local_state.cap_length > 0 and local_state.cap_state
@@ -449,7 +451,6 @@ async def start_control(game_mode):
             f"{game_mode.name} {local_state.game_length_str}\n{local_state.team} {local_state.cap_length_str}"
         )
     await sleep(0.5)
-    ENCB.update()
     if local_state.cap_length == 0:
         RGBS.update(local_state.team, "chase_on_off", repeat=-1)
     else:
@@ -460,7 +461,6 @@ async def start_control(game_mode):
             break
         await sleep(0)
     await sleep(0.1)
-    ENCB.update()
     await restart(game_mode)
 
 
@@ -471,18 +471,22 @@ async def start_deathclicks(game_mode):
     display_message(f"{local_state.team} team\nDeaths {local_state.lives_count}")
     RGBS.update(local_state.team)
     while not ENCB.long_press:
-        ENCB.update()
-        if not RED.value or not BLUE.value:
+        if REDB.short_count > 0 or BLUEB.short_count > 0:
             local_state.lives_count += 1
-            RGBS.update(local_state.team, "chase_off_on", 0.001)
             display_message(
                 f"{local_state.team} team\nDeaths {local_state.lives_count}"
             )
-            await sleep(0.1)
+            RGBS.update(local_state.team, "chase_off_on", 0.001)
+            await sleep(0)
+        if REDB.long_press or BLUEB.long_press:
+            local_state.lives_count = max(0, local_state.lives_count - 1)
+            display_message(
+                f"{local_state.team} team\nDeaths {local_state.lives_count}"
+            )
+            await sleep(0)
         await sleep(0)
     RGBS.update(local_state.team, "chase_off_on", 0.0025)
     await sleep(0.1)
-    ENCB.update()
     await restart(game_mode)
 
 
@@ -521,7 +525,6 @@ async def start_domination2(game_mode):
             break
         await sleep(0)
     await sleep(0.1)
-    ENCB.update()
     await restart(game_mode)
 
 
@@ -570,7 +573,6 @@ async def start_domination3(game_mode):
             break
         await sleep(0)
     await sleep(0.1)
-    ENCB.update()
     await restart(game_mode)
 
 
@@ -621,7 +623,6 @@ async def start_koth(game_mode):
             break
         await sleep(0)
     await sleep(0.1)
-    ENCB.update()
     await restart(game_mode)
 
 
@@ -632,7 +633,6 @@ async def restart(game_mode):
     display_message(f"Restart?:\n{RESTART_OPTIONS[initial_state.restart_index]}")
     await sleep(0.5)
     while True:
-        ENCB.update()
         if ENCS._was_rotated.is_set():
             initial_state.restart_index = ENCS.encoder_handler(
                 initial_state.restart_index, 1
@@ -645,7 +645,6 @@ async def restart(game_mode):
             break
         await sleep(0)
     await sleep(0.5)
-    ENCB.update()
     print(mem_free())
     if initial_state.restart_index == 1:
         if game_mode.has_team:

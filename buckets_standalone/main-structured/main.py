@@ -1,10 +1,9 @@
 try:  # If running in CircuitPython
-    from asyncio import sleep, create_task, gather, run, Event
     from time import monotonic  # type: ignore
 except ImportError:  # If running in MicroPython
-    from uasyncio import sleep, create_task, gather, run  # type: ignore
     from hardware import monotonic
 
+from asyncio import sleep, create_task, gather, run, Event
 from gc import enable, mem_free  # type: ignore
 from random import randint
 from hardware import (
@@ -22,7 +21,10 @@ from hardware import (
 from audio_commands import Sound_Control
 from led_commands import RGB_Control, RGB_Settings
 
-# Setting initial variables for use
+"""
+Setting initial variables for use
+"""
+# region
 MODES = []
 RESTART_OPTIONS = ["No", "Yes"]
 EXTRAS = [
@@ -36,8 +38,14 @@ EXTRAS = [
     "This bucket \nkills fascists",
     "Taco Tuesday",
     "Amongus",
-    "Dino Nuggies",
+    "Dino nuggies",
+    "Bumper cars",
 ]
+# endregion
+"""
+Important state management
+"""
+# region
 
 
 class Game_States:
@@ -142,14 +150,26 @@ class ENC_States:
                 return x - y
 
 
+async def button_monitor():
+    """Async function for monitoring button presses"""
+    while True:
+        ENCB.update()
+        REDB.update()
+        BLUEB.update()
+        await sleep(0)
+
+
 initial_state = Game_States()
 ENCS = ENC_States()
 SOUND = Sound_Control()
 RGB = RGB_Control()
 RGBS = RGB_Settings()
 
-
-###
+# endregion
+"""
+Simple helper functions
+"""
+# region
 
 
 def shallow_copy(obj):
@@ -185,52 +205,11 @@ def update_team(
     RGBS.update(team, pattern, delay, hold=hold)
 
 
-async def button_monitor():
-    """Async function for monitoring button presses"""
-    while True:
-        ENCB.update()
-        REDB.update()
-        BLUEB.update()
-        await sleep(0)
-
-
-###
-
-
-async def main_menu():
-    """Main menu for scrolling and displaying game options"""
-    display_message(EXTRAS[randint(0, len(EXTRAS) - 1)])
-    RGBS.update(pattern="solid")
-    await sleep(0.5)
-    for color in ["Red", "Blue", "Green"]:
-        update_team(color, hold=True)
-        while RGBS.hold:
-            await sleep(0)
-    display_message(f"Select a game:\n{MODES[initial_state.menu_index].name}")
-    while True:
-        if ENCS._was_rotated.is_set():
-            initial_state.menu_index = ENCS.encoder_handler(
-                initial_state.menu_index, 1
-            ) % len(MODES)
-            display_message(f"Select a game:\n{MODES[initial_state.menu_index].name}")
-        if ENCS._was_pressed.is_set():
-            ENCS._was_pressed.clear()
-            break
-        await sleep(0)
-    await sleep(0.1)
-    await run_program(MODES[initial_state.menu_index])
-
-
-async def run_program(menu_choice):
-    """Used to run a function when the respective menu item is selected"""
-    display_message(f"Running:\n{menu_choice.name}")
-    await sleep(0.5)
-    if menu_choice.has_lives:
-        await counter_screen(menu_choice)
-    elif menu_choice.has_team:
-        await team_screen(menu_choice)
-    elif menu_choice.has_game_length:
-        await timer_screen(menu_choice)
+# endregion
+"""
+More substantial game mode helper functions
+"""
+# region
 
 
 async def counter_screen(game_mode):
@@ -247,11 +226,7 @@ async def counter_screen(game_mode):
             ENCS._was_pressed.clear()
             break
         await sleep(0)
-    await sleep(0.1)
-    if game_mode.has_team:
-        await team_screen(game_mode)
-    else:
-        await standby_screen(game_mode)
+    await sleep(0)
 
 
 async def team_screen(game_mode):
@@ -271,11 +246,7 @@ async def team_screen(game_mode):
             ENCS._was_pressed.clear()
             break
         await sleep(0)
-    await sleep(0.1)
-    if game_mode.has_game_length:
-        await timer_screen(game_mode)
-    else:
-        await standby_screen(game_mode)
+    await sleep(0)
 
 
 async def timer_screen(game_mode):
@@ -320,8 +291,39 @@ async def timer_screen(game_mode):
                 ENCS._was_pressed.clear()
                 break
             await sleep(0)
+    await sleep(0)
+
+
+# endregion
+"""
+Primary function loop
+"""
+# region
+
+
+async def main_menu():
+    """Main menu for scrolling and displaying game options"""
+    display_message(EXTRAS[randint(0, len(EXTRAS) - 1)])
+    RGBS.update(pattern="solid")
+    await sleep(0.5)
+    for color in ["Red", "Blue", "Green"]:
+        update_team(color, hold=True)
+        while RGBS.hold:
+            await sleep(0)
+    display_message(f"Select a game:\n{MODES[initial_state.menu_index].name}")
+    while True:
+        if ENCS._was_rotated.is_set():
+            initial_state.menu_index = ENCS.encoder_handler(
+                initial_state.menu_index, 1
+            ) % len(MODES)
+            display_message(f"Select a game:\n{MODES[initial_state.menu_index].name}")
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
+            break
+        await sleep(0)
     await sleep(0.1)
-    await standby_screen(game_mode)
+    display_message(f"Running:\n{MODES[initial_state.menu_index].name}")
+    await MODES[initial_state.menu_index].game_setup()
 
 
 async def standby_screen(game_mode):
@@ -347,6 +349,42 @@ async def standby_screen(game_mode):
         elif initial_state.restart_index == 1:
             pass
     return
+
+
+async def restart(game_mode):
+    """Function for restarting the program"""
+    await sleep(0.5)
+    RGBS.update()
+    display_message(f"Restart?:\n{RESTART_OPTIONS[initial_state.restart_index]}")
+    await sleep(0.5)
+    while True:
+        if ENCS._was_rotated.is_set():
+            initial_state.restart_index = ENCS.encoder_handler(
+                initial_state.restart_index, 1
+            ) % len(RESTART_OPTIONS)
+            display_message(
+                f"Restart?:\n{RESTART_OPTIONS[initial_state.restart_index]}"
+            )
+        if ENCS._was_pressed.is_set():
+            ENCS._was_pressed.clear()
+            break
+        await sleep(0)
+    await sleep(0.5)
+    print(mem_free())
+    if initial_state.restart_index == 1:
+        if game_mode.has_team:
+            update_team("Blue" if initial_state.team == "Red" else "Red")
+        else:
+            update_team()
+    await sleep(0.5)
+    return
+
+
+# endregion
+"""
+Per game mode functions
+"""
+# region
 
 
 async def start_attrition(game_mode):
@@ -532,7 +570,6 @@ async def start_domination3(game_mode):
     """Function for Domination v3 game mode"""
     local_state = shallow_copy(initial_state)
     await sleep(0.5)
-    local_state.timer_state = True
     local_state.red_time = local_state.game_length
     local_state.blue_time = local_state.game_length
     display_message(
@@ -580,7 +617,6 @@ async def start_koth(game_mode):
     """Function for KotH timers"""
     local_state = shallow_copy(initial_state)
     await sleep(0.5)
-    local_state.timer_state = True
     local_state.red_time = local_state.game_length
     local_state.blue_time = local_state.game_length
     display_message(
@@ -626,43 +662,11 @@ async def start_koth(game_mode):
     await restart(game_mode)
 
 
-async def restart(game_mode):
-    """Function for restarting the program"""
-    await sleep(0.5)
-    RGBS.update()
-    display_message(f"Restart?:\n{RESTART_OPTIONS[initial_state.restart_index]}")
-    await sleep(0.5)
-    while True:
-        if ENCS._was_rotated.is_set():
-            initial_state.restart_index = ENCS.encoder_handler(
-                initial_state.restart_index, 1
-            ) % len(RESTART_OPTIONS)
-            display_message(
-                f"Restart?:\n{RESTART_OPTIONS[initial_state.restart_index]}"
-            )
-        if ENCS._was_pressed.is_set():
-            ENCS._was_pressed.clear()
-            break
-        await sleep(0)
-    await sleep(0.5)
-    print(mem_free())
-    if initial_state.restart_index == 1:
-        if game_mode.has_team:
-            update_team("Blue" if initial_state.team == "Red" else "Red")
-        else:
-            update_team()
-    await sleep(0.5)
-    return
-
-
-async def game_task_chain():
-    """Task chain for running the program"""
-    while True:
-        await main_menu()
-        initial_state.reset()
-
-
-###
+# endregion
+"""
+Program initialization
+"""
+# region
 
 
 class GameMode:
@@ -702,6 +706,15 @@ class GameMode:
             message = 2
         return self.display_messages[message]
 
+    async def game_setup(self):
+        if self.has_lives:
+            await counter_screen(self)
+        if self.has_team:
+            await team_screen(self)
+        if self.has_game_length:
+            await timer_screen(self)
+        await standby_screen(self)
+
     async def run_final_function(self):
         final_func = globals().get(self.final_func_str, None)
         if callable(final_func):
@@ -732,6 +745,13 @@ enable()
 SOUND.set_vol(30)
 
 
+async def game_task_chain():
+    """Task chain for running the program"""
+    while True:
+        await main_menu()
+        initial_state.reset()
+
+
 async def main():
     rgb_task = create_task(RGBS.rgb_control(RGB))
     enc_task = create_task(ENCS.update())
@@ -742,3 +762,4 @@ async def main():
 
 if __name__ == "__main__":
     run(main())
+# endregion

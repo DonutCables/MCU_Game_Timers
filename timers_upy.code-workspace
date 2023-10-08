@@ -2,6 +2,10 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"name": "Pico (W) Remote Workspace",
+			"uri": "pico:"
 		}
 	],
 	"settings": {
@@ -14,7 +18,8 @@
 			"s:\\VSC\\data\\extensions\\joedevivo.vscode-circuitpython-0.1.20-win32-x64\\stubs",
 			"s:\\VSC\\data\\user-data\\User\\globalStorage\\joedevivo.vscode-circuitpython\\bundle\\20230920\\adafruit-circuitpython-bundle-py-20230920\\lib",
 			"./lib",
-			"."
+			".",
+			"./lib-upy",
 		],
 		"circuitpython.board.version": "8.2.0",
 		"circuitpython.board.vid": "0x239A",
@@ -24,7 +29,7 @@
 		"[python]": {
 			"editor.defaultFormatter": "ms-python.black-formatter"
 		},
-		"black-formatter.importStrategy": "useBundled",
+		"black-formatter.importStrategy": "fromEnvironment",
 		"python.linting.pylintEnabled": false,
 		"micropico.syncFolder": "",
 		"python.formatting.provider": "none",
@@ -34,5 +39,8 @@
 		],
 		"editor.defaultFormatter": "ms-python.black-formatter",
 		"micropico.softResetAfterUpload": true,
+		"black-formatter.path": [
+			"${workspaceFolder}/.venv-upy/Scripts/black"
+		],
 	}
 }

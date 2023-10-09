@@ -33,5 +33,6 @@
     "[python]": {
         "editor.formatOnType": false,
         "editor.defaultFormatter": "ms-python.black-formatter"
-    }
+    },
+    "python.defaultInterpreterPath": ""
 }

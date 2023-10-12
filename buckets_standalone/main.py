@@ -242,6 +242,7 @@ More substantial game mode helper functions
 async def counter_screen(game_mode):
     """Screen used to set lives for Attrition"""
     await sleep(0.5)
+    ENCS._was_pressed.clear()
     display_message(f"{game_mode.name} \nLives: {initial_state.lives_count}")
     while True:
         if ENCS._was_rotated.is_set():
@@ -259,6 +260,7 @@ async def counter_screen(game_mode):
 async def identity_screen(game_mode):
     """Screen to set bucket identifier for swapping-based game modes"""
     await sleep(0.5)
+    ENCS._was_pressed.clear()
     display_message(f"{game_mode.name}\nBucket ID: {initial_state.bucket_id}")
     while True:
         if ENCS._was_rotated.is_set():
@@ -289,6 +291,7 @@ async def identity_screen(game_mode):
 async def team_screen(game_mode):
     """Screen for selecting team counter for Attrition and Death Clicks"""
     await sleep(0.5)
+    ENCS._was_pressed.clear()
     display_message(f"{game_mode.name}\nTeam:")
     while True:
         if REDB.rose:
@@ -309,6 +312,7 @@ async def team_screen(game_mode):
 async def timer_screen(game_mode):
     """Screen used to set time for game modes with built in timers"""
     await sleep(0.5)
+    ENCS._was_pressed.clear()
     display_message(f"{game_mode.name}\nTime: {initial_state.game_length_str}")
     while True:
         if ENCS._was_rotated.is_set():

@@ -689,7 +689,7 @@ async def start_kothmoving(game_mode):
                 *initial_state.bucket_interval_upper
             ) or local_state.game_length in range(*initial_state.bucket_interval_lower):
                 if not local_state.cap_state:
-                    RGBS.update(local_state.team, delay=0.0025)
+                    update_team(state=local_state)
                     local_state.cap_state = True
                     print("cap on")
             else:

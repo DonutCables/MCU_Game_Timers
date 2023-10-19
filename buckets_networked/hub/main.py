@@ -1,109 +1,98 @@
+from time import monotonic
+import json
 import board
 import neopixel
 import socketpool
 import wifi
 import os
-import time
-from adafruit_httpserver import Server, Request, Response, POST
+from adafruit_httpserver import Server, Request, Response, Websocket, GET, POST
 
-# Set up the NeoPixel strip
 pixel_pin = board.NEOPIXEL  # Change to the appropriate pin for your board
 num_pixels = 1  # Change to the number of NeoPixels on your strip
 pixels = neopixel.NeoPixel(pixel_pin, num_pixels, brightness=0.2)
 
 font_family = "monospace"
-temp_test = 69
-unit = "F"
 
-# Connect to Wi-Fi access point
 ssid = os.getenv("AP_SSID")
 password = os.getenv("AP_PASSWORD")
+
+pool = socketpool.SocketPool(wifi.radio)
+server = Server(pool, debug=True)
 
 wifi.radio.start_ap(ssid, password)
 print("Connected to", ssid)
 
-# Create a socket pool
-pool = socketpool.SocketPool(wifi.radio)
+websocket: Websocket = None
 
-# Create an HTTP server
-server = Server(pool, "/static", debug=True)
-
-
-# Define a request handler for setting the NeoPixel color
-def webpage():
-    html = f"""<!DOCTYPE html>
-    <html>
+HTML_TEMPLATE = """
+    <html lang="en">
     <head>
     <meta http-equiv="Content-type" content="text/html;charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-    html{{font-family: {font_family}; background-color: lightgrey;
-    display:inline-block; margin: 0px auto; text-align: center;}}
-      h1{{color: deeppink; width: 200; word-wrap: break-word; padding: 2vh; font-size: 35px;}}
-      p{{font-size: 1.5rem; width: 200; word-wrap: break-word;}}
-      .button{{font-family: {font_family};display: inline-block;
-      background-color: black; border: none;
-      border-radius: 4px; color: white; padding: 16px 40px;
-      text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}}
-      p.dotted {{margin: auto;
-      width: 75%; font-size: 25px; text-align: center;}}
-    </style>
+    <title>Timer Buckets</title>
     </head>
     <body>
-    <title>Pico W HTTP Server</title>
-    <h1>Pico W HTTP Server</h1>
-    <br>
-    <p class="dotted">This is a Pico W running an HTTP server with CircuitPython.</p>
-    <br>
-    <p class="dotted">The current ambient temperature near the Pico W is
-    <span style="color: deeppink;">{temp_test:.2f}°{unit}</span></p><br>
-    <h1>Control the LED on the Pico W with these buttons:</h1><br>
-    <form accept-charset="utf-8" method="POST">
-    <button class="button" name="LED ON" value="ON" type="submit">LED ON</button></a></p></form>
-    <p><form accept-charset="utf-8" method="POST">
-    <button class="button" name="LED OFF" value="OFF" type="submit">LED OFF</button></a></p></form>
-    <h1>Party?</h>
-    <p><form accept-charset="utf-8" method="POST">
-    <button class="button" name="party" value="party" type="submit">PARTY!</button></a></p></form>
-    </body></html>"""
-    return html
+    <span style="color: deeppink;">
+    <h1>ESP32S3 Timer Bucket Server</h1><br>
+    <p class="dotted">Example page hosting timer bucket information.</p><br>
+    <p>The current timer value is </p>
+    <p id="timer"> text </p>
+    <p>Bucket 1 team is</p>
+    <p id="bucket1"> text </p>
+    </span><br>
+    <script>
+    const timer = document.getElementById("timer");
+    const bucket1 = document.getElementById("bucket1");
+    let ws = new WebSocket('ws://' + location.host + '/connect-websocket');
+    ws.onopen = () => console.log('WebSocket Client Connected');
+    ws.onclose = () => console.log('WebSocket Client Disconnected');
+    ws.onmessage = event => {
+        const { timer: newTimer, bucket1: newBucket1 } = JSON.parse(event.data);
+        timer.textContent = newTimer;
+        bucket1.textContent = newBucket1;
+    };
+    ws.onerror = error => console.error(error);
+    </script>    
+    </body>
+    </html>
+    """
 
 
-#  route default static IP
-@server.route("/")
-def base(request: Request):  # pylint: disable=unused-argument
-    #  serve the HTML f string
-    #  with content type text/html
-    return Response(request, f"{webpage()}", content_type="text/html")
+@server.route("/", GET)
+def client(request: Request):
+    return Response(request, f"{HTML_TEMPLATE}", content_type="text/html")
 
 
-#  if a button is pressed on the site
-@server.route("/", POST)
-def buttonpress(request: Request):
-    #  get the raw text
-    raw_text = request.raw_request.decode("utf8")
-    print(raw_text)
-    #  if the led on button was pressed
-    if "ON" in raw_text:
-        #  turn on the onboard LED
-        pixels.fill((255, 0, 0))
-    #  if the led off button was pressed
-    if "OFF" in raw_text:
-        #  turn the onboard LED off
-        pixels.fill((0, 255, 0))
-    #  if the party button was pressed
-    if "party" in raw_text:
-        #  toggle the parrot_pin value
-        pixels.fill((0, 0, 255))
-    #  reload site
-    return Response(request, f"{webpage()}", content_type="text/html")
+@server.route("/connect-websocket", GET)
+def connect_client(request: Request):
+    global websocket  # pylint: disable=global-statement
+    if websocket is not None:
+        websocket.close()  # Close any existing connection
+    websocket = Websocket(request)
+    return websocket
 
 
 server.start(host=str(os.getenv("AP_IP")), port=80)
-
-delay = time.monotonic()
+next_message_time = monotonic()
+team_message_time = monotonic()
+timer = 300
+dataDict = {"timer": timer, "bucket1": "Red"}
 while True:
-    if time.monotonic() - delay > 1:
-        temp_test += 1
-        delay = time.monotonic()
     server.poll()
+
+    if websocket is not None:
+        if (data := websocket.receive(True)) is not None:
+            r, g, b = int(data[1:3], 16), int(data[3:5], 16), int(data[5:7], 16)
+            pixels.fill((r, g, b))
+
+    if websocket is not None and monotonic() > next_message_time + 1:
+        timer -= 1
+        timestr = f"{timer // 60:02}:{timer % 60:02}"
+        dataDict["timer"] = timestr
+        json_string = json.dumps(dataDict)
+        websocket.send_message(json_string)
+        next_message_time = monotonic()
+
+    if monotonic() > team_message_time + 2.5:
+        dataDict["bucket1"] = "Blue" if dataDict["bucket1"] == "Red" else "Red"
+        team_message_time = monotonic()

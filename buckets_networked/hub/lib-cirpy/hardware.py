@@ -1,12 +1,11 @@
 """
-Hardware declarations for the timer project. 
+Hardware declarations for the timer project.
 Used to easily change pin connections without changing the primary code.
 """
 import board
-
 from busio import I2C, UART
-from rotaryio import IncrementalEncoder
 from digitalio import DigitalInOut, Pull, DriveMode
+from rotaryio import IncrementalEncoder
 from neopixel import NeoPixel  # type: ignore
 from adafruit_debouncer import Button  # type: ignore
 from lcd_i2c8574_m import I2cLcd
@@ -26,20 +25,18 @@ class DisplayWrapper:
         self.i2c = I2C(scl_pin, sda_pin)
         self.display = None
         self.lcd_addresses = lcd_addresses
-        self.rows = rows
-        self.cols = cols
+        self.dimensions = (cols, rows)
         self.init_lcd()
 
     def init_lcd(self):
         while self.i2c.try_lock():
             for addr in self.lcd_addresses:
                 try:
-                    self.display = I2cLcd(self.i2c, addr, (self.cols, self.rows))
-                except ValueError:
+                    self.display = I2cLcd(self.i2c, addr, self.dimensions)
+                except Exception:
                     continue
                 else:
-                    break
-            break
+                    return
 
     def write(self, text):
         if self.display is not None:
@@ -50,7 +47,7 @@ class DisplayWrapper:
             self.display.clear()
 
 
-DISPLAY = DisplayWrapper(board.GP0, board.GP1, [0x27, 0x3F], 2, 16)
+DISPLAY = DisplayWrapper(board.GP0, board.GP1, rows=2, cols=16)
 
 # UART audio output
 AUDIO_OUT = UART(board.GP4, board.GP5, baudrate=9600)

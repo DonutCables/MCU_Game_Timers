@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-type" content="text/html;charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        html {
+                {
+                font-family: {
+                    font_family
+                }
+
+                ;
+                background-color: lightgrey;
+                display:inline-block;
+                margin: 0px auto;
+                text-align: center;
+            }
+        }
+
+        h1 {
+                {
+                color: deeppink;
+                width: 200;
+                word-wrap: break-word;
+                padding: 2vh;
+                font-size: 35px;
+            }
+        }
+
+        p {
+                {
+                font-size: 1.5rem;
+                width: 200;
+                word-wrap: break-word;
+            }
+        }
+
+        .button {
+                {
+                font-family: {
+                    font_family
+                }
+
+                ;
+                display: inline-block;
+                background-color: black;
+                border: none;
+                border-radius: 4px;
+                color: white;
+                padding: 16px 40px;
+                text-decoration: none;
+                font-size: 30px;
+                margin: 2px;
+                cursor: pointer;
+            }
+        }
+
+        p.dotted {
+                {
+                margin: auto;
+                width: 75%;
+                font-size: 25px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <title>Timer Buckets</title>
+    <h1>ESP32S3 Timer Bucket Server</h1>
+    <br>
+    <p class="dotted">Example page hosting timer bucket information.</p>
+    <br>
+    <p class="dotted">The current timer value is <strong>-</strong></p>
+    <script>
+        const eventSource = new EventSource("/connect-client");
+        const timer = document.querySelector("strong");
+        eventSource.onmessage = (event) => timer.textContent = event.data;
+        eventSource.onerror = (error) => timer.textContent = error;
+    </script>
+    <span style="color: deeppink;">
+    </span><br>
+    <h1>Control the LED on the Pico W with these buttons:</h1><br>
+    <form accept-charset="utf-8" method="POST">
+        <button class="button" name="LED RED" value="RED" type="submit">LED RED</button></a></p>
+    </form>
+    <p>
+    <form accept-charset="utf-8" method="POST">
+        <button class="button" name="LED GREEN" value="GREEN" type="submit">LED GREEN</button></a></p>
+    </form>
+    <p>
+    <form accept-charset="utf-8" method="POST">
+        <button class="button" name="LED BLUE" value="BLUE" type="submit">LED BLUE</button></a></p>
+    </form>
+</body>
+
+</html>

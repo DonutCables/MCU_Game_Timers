@@ -1,3 +1,7 @@
+"""
+Imports
+"""
+# region
 try:  # If running in CircuitPython
     from time import monotonic  # type: ignore
 except ImportError:  # If running in MicroPython
@@ -23,6 +27,7 @@ from hardware import (
 from audio_commands import Sound_Control
 from led_commands import RGB_Control, RGB_Settings
 
+# endregion
 """
 Setting initial variables for use
 """
@@ -742,7 +747,7 @@ async def start_kothmoving(game_mode):
 
 # endregion
 """
-Program initialization
+GameMode class and instantiation
 """
 # region
 
@@ -893,10 +898,10 @@ async def game_task_chain():
 
 
 async def main():
+    game_task = create_task(game_task_chain())
     rgb_task = create_task(RGBS.rgb_control(RGB))
     enc_task = create_task(ENCS.update())
     button_task = create_task(button_monitor())
-    game_task = create_task(game_task_chain())
     await gather(game_task, rgb_task, enc_task, button_task)
 
 

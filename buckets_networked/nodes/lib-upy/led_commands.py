@@ -1,12 +1,12 @@
 from asyncio import sleep
-from hardware import RGB_LED
+from neopixel import NeoPixel
 
 
 class RGB_Control:
-    """RGB control via Adafruit NeoPixel object RGB_LED defined in hardware.py"""
+    """RGB control via Adafruit NeoPixel object"""
 
-    def __init__(self):
-        self.RGB_LED = RGB_LED
+    def __init__(self, rgb: NeoPixel):
+        self.rgb = rgb
 
     COLOR = {
         "Red": (255, 0, 0),
@@ -17,15 +17,15 @@ class RGB_Control:
 
     async def solid(self, color, delay):
         """Set the LED to a solid color"""
-        self.RGB_LED.fill(self.COLOR[color])
-        self.RGB_LED.write()
+        self.rgb.fill(self.COLOR[color])
+        self.rgb.write()
 
     async def chase(self, color, delay):
         """Chase the LED with a specific color and delay"""
-        for i in range(self.RGB_LED.__len__()):
-            self.RGB_LED[i] = self.COLOR[color]
+        for i in range(self.rgb.__len__()):
+            self.rgb[i] = self.COLOR[color]
             await sleep(delay)
-            self.RGB_LED.write()
+            self.rgb.write()
             await sleep(0)
 
     async def chase_off_on(self, color, delay):
@@ -40,31 +40,31 @@ class RGB_Control:
 
     async def single_blink_on_off(self, color, delay):
         """Blink a single LED on at a time"""
-        for i in range(self.RGB_LED.__len__()):
-            self.RGB_LED[i] = self.COLOR[color]
-            self.RGB_LED.write()
+        for i in range(self.rgb.__len__()):
+            self.rgb[i] = self.COLOR[color]
+            self.rgb.write()
             await sleep(delay)
-            self.RGB_LED[i] = self.COLOR["Off"]
-            self.RGB_LED.write()
+            self.rgb[i] = self.COLOR["Off"]
+            self.rgb.write()
             await sleep(delay)
 
     async def single_blink_off_on(self, color, delay):
         """Blink a single LED off at a time"""
-        for i in range(self.RGB_LED.__len__()):
-            self.RGB_LED[i] = self.COLOR["Off"]
-            self.RGB_LED.write()
+        for i in range(self.rgb.__len__()):
+            self.rgb[i] = self.COLOR["Off"]
+            self.rgb.write()
             await sleep(delay)
-            self.RGB_LED[i] = self.COLOR[color]
-            self.RGB_LED.write()
+            self.rgb[i] = self.COLOR[color]
+            self.rgb.write()
             await sleep(delay)
 
     async def all_blink(self, color, delay):
         """Blink all LEDs simultaneously"""
-        self.RGB_LED.fill(self.COLOR[color])
-        self.RGB_LED.write()
+        self.rgb.fill(self.COLOR[color])
+        self.rgb.write()
         await sleep(delay)
-        self.RGB_LED.fill(self.COLOR["Off"])
-        self.RGB_LED.write()
+        self.rgb.fill(self.COLOR["Off"])
+        self.rgb.write()
         await sleep(delay)
 
 

@@ -2,13 +2,12 @@
 Hardware declarations for the timer project.
 Used to easily change pin connections without changing the primary code.
 """
-
 from machine import Pin, I2C, UART
-from utime import ticks_ms
+from rotary_irq_rp2 import RotaryIRQ
 from neopixel import NeoPixel
 from adafruit_debouncer import Button
-from rotary_irq_rp2 import RotaryIRQ
 from lcd_i2c8574_m import I2cLcd
+from utime import ticks_ms
 
 
 class DisplayWrapper:
@@ -25,18 +24,17 @@ class DisplayWrapper:
         self.i2c = I2C(0, sda=Pin(sda_pin), scl=Pin(scl_pin))
         self.display = None
         self.lcd_addresses = lcd_addresses
-        self.rows = rows
-        self.cols = cols
+        self.dimensions = (cols, rows)
         self.init_lcd()
 
     def init_lcd(self):
         for addr in self.lcd_addresses:
             try:
-                self.display = I2cLcd(self.i2c, addr, (self.cols, self.rows))
-            except ValueError:
+                self.display = I2cLcd(self.i2c, addr, self.dimensions)
+            except Exception:
                 continue
             else:
-                break
+                return
 
     def write(self, text):
         if self.display is not None:
@@ -122,9 +120,11 @@ ENC, RED, BLUE = (Button_Wrapper(pin) for pin in iopins[3:6])
 
 # Create debouncer objects from DIO buttons
 hold_ms = 2000
-ENCB = Button(ENC, long_duration_ms=hold_ms)
-REDB = Button(RED, long_duration_ms=hold_ms)
-BLUEB = Button(BLUE, long_duration_ms=hold_ms)
+ENCB, REDB, BLUEB = (
+    Button(ENC, long_duration_ms=hold_ms),
+    Button(RED, long_duration_ms=hold_ms),
+    Button(BLUE, long_duration_ms=hold_ms),
+)
 
 # Team button LED setup
 RED_LED, BLUE_LED = (LED_Wrapper(pin) for pin in iopins[6:8])

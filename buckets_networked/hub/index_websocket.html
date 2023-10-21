@@ -1,0 +1,33 @@
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-type" content="text/html;charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Timer Buckets</title>
+</head>
+
+<body>
+    <span style="color: deeppink;">
+        <h1>ESP32S3 Timer Bucket Server</h1><br>
+        <p class="dotted">Example page hosting timer bucket information.</p><br>
+        <p>The current timer value is </p>
+        <p id="timer"> text </p>
+        <p>Bucket 1 team is</p>
+        <p id="bucket1"> text </p>
+    </span><br>
+    <script>
+        const timer = document.getElementById("timer");
+        const bucket1 = document.getElementById("bucket1");
+        let ws = new WebSocket('ws://' + location.host + '/connect-websocket');
+        ws.onopen = () => console.log('WebSocket Client Connected');
+        ws.onclose = () => console.log('WebSocket Client Disconnected');
+        ws.onmessage = event => {
+            const { timer: newTimer, bucket1: newBucket1 } = JSON.parse(event.data);
+            timer.textContent = newTimer;
+            bucket1.textContent = newBucket1;
+        };
+        ws.onerror = error => console.error(error);
+    </script>
+</body>
+
+</html>

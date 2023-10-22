@@ -421,9 +421,9 @@ async def start_attrition(game_mode):
         if ENCB.long_press:
             break
         await sleep(0)
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
     display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
-    await sleep(0.1)
+    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+    ENCS._was_pressed.clear()
     while True:
         if ENCS._was_pressed.is_set():
             ENCS._was_pressed.clear()
@@ -454,7 +454,6 @@ async def start_basictimer(game_mode):
         if ENCB.short_count > 1:
             local_state.timer_state = not local_state.timer_state
         if ENCB.long_press:
-            RGBS.update(local_state.team, "chase_on_off", 0.0025)
             break
         await sleep(0)
     await sleep(0.1)
@@ -501,11 +500,11 @@ async def start_control(game_mode):
         display_message(
             f"{game_mode.name} {local_state.game_length_str}\n{local_state.team} {local_state.cap_length_str}"
         )
-    await sleep(0.5)
     if local_state.cap_length == 0:
         RGBS.update(local_state.team, "chase_on_off", repeat=-1)
     else:
         RGBS.update()
+    ENCS._was_pressed.clear()
     while True:
         if ENCS._was_pressed.is_set():
             ENCS._was_pressed.clear()
@@ -536,7 +535,6 @@ async def start_deathclicks(game_mode):
             )
             await sleep(0)
         await sleep(0)
-    RGBS.update(local_state.team, "chase_off_on", 0.0025)
     await sleep(0.1)
     await game_mode.restart()
 
@@ -570,6 +568,7 @@ async def start_domination2(game_mode):
         await sleep(0)
     display_message(f"{local_state.team} Team\nPoint Locked")
     RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+    ENCS._was_pressed.clear()
     while True:
         if ENCS._was_pressed.is_set():
             ENCS._was_pressed.clear()
@@ -617,6 +616,7 @@ async def start_domination3(game_mode):
         await sleep(0)
     display_message(f"{local_state.team} Team\nPoint Locked")
     RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+    ENCS._was_pressed.clear()
     while True:
         if ENCS._was_pressed.is_set():
             ENCS._was_pressed.clear()
@@ -670,6 +670,7 @@ async def start_koth(game_mode):
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+    ENCS._was_pressed.clear()
     while True:
         if ENCS._was_pressed.is_set():
             ENCS._was_pressed.clear()
@@ -679,14 +680,13 @@ async def start_koth(game_mode):
     await game_mode.restart()
 
 
-async def start_kothmoving(game_mode):
-    """Function for moving KotH game mode"""
+async def start_doordash(game_mode):
+    """Function for DoorDash/moving KotH game mode"""
     local_state = shallow_copy(initial_state)
     await sleep(0.5)
     display_message(
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
-    update_team(state=local_state)
     clock = monotonic()
     while local_state.game_length > 0:
         if local_state.timer_state:
@@ -736,6 +736,7 @@ async def start_kothmoving(game_mode):
     else:
         update_team("Green", delay=0.0025, state=local_state)
     RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+    ENCS._was_pressed.clear()
     while True:
         if ENCS._was_pressed.is_set():
             ENCS._was_pressed.clear()
@@ -881,7 +882,7 @@ MODES = [
     GameMode("Domination 2", has_game_length=True),
     GameMode("Domination 3", has_game_length=True),
     GameMode("KotH", has_game_length=True),
-    GameMode("Koth Moving", has_id=True, has_game_length=True),
+    GameMode("DoorDash", has_id=True, has_game_length=True),
 ]
 
 

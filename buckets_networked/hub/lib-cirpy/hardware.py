@@ -77,9 +77,9 @@ for button in [ENC, RED, BLUE]:
     button.switch_to_input(Pull.UP)
 
 # Create debouncer objects from DIO buttons
-hold_ms = 2000
+hold_ms = 1000
 ENCB, REDB, BLUEB = (
-    Button(ENC, long_duration_ms=hold_ms),
+    Button(ENC, long_duration_ms=hold_ms * 2),
     Button(RED, long_duration_ms=hold_ms),
     Button(BLUE, long_duration_ms=hold_ms),
 )

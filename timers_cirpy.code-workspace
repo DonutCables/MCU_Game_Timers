@@ -25,7 +25,7 @@
 			"./lib-cirpy",
 			"./buckets_standalone/lib-cirpy"
 		],
-		"circuitpython.board.version": "8.2.0",
+		"circuitpython.board.version": "8.2.7",
 		"circuitpython.board.vid": "0x303A",
 		"circuitpython.board.pid": "0x8166",
 		"terminal.integrated.altClickMovesCursor": false,

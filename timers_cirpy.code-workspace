@@ -17,9 +17,9 @@
 			"reportMissingModuleSource": "none"
 		},
 		"python.analysis.extraPaths": [
-			"s:\\VSC\\data\\extensions\\joedevivo.vscode-circuitpython-0.1.20-win32-x64\\boards\\0x303A\\0x8166",
+			"s:\\VSC\\data\\extensions\\joedevivo.vscode-circuitpython-0.1.20-win32-x64\\boards\\0x303A\\0x7003",
 			"s:\\VSC\\data\\extensions\\joedevivo.vscode-circuitpython-0.1.20-win32-x64\\stubs",
-			"s:\\VSC\\data\\user-data\\User\\globalStorage\\joedevivo.vscode-circuitpython\\bundle\\20231025\\adafruit-circuitpython-bundle-py-20231025\\lib",
+			"s:\\VSC\\data\\user-data\\User\\globalStorage\\joedevivo.vscode-circuitpython\\bundle\\20231029\\adafruit-circuitpython-bundle-py-20231029\\lib",
 			"./lib",
 			".",
 			"./lib-cirpy",
@@ -27,7 +27,7 @@
 		],
 		"circuitpython.board.version": "8.2.7",
 		"circuitpython.board.vid": "0x303A",
-		"circuitpython.board.pid": "0x8166",
+		"circuitpython.board.pid": "0x7003",
 		"terminal.integrated.altClickMovesCursor": false,
 		"editor.formatOnSave": true,
 		"[python]": {

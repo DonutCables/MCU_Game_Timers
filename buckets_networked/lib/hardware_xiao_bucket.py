@@ -1,9 +1,10 @@
+# type: ignore
 """
 Hardware declarations for the timer project.
 Used to easily change pin connections without changing the primary code.
 """
 import board
-from busio import I2C, UART
+from busio import I2C  # , UART
 from digitalio import DigitalInOut, Pull, DriveMode
 from rotaryio import IncrementalEncoder
 from neopixel import NeoPixel
@@ -32,13 +33,10 @@ class DisplayWrapper:
         while self.i2c.try_lock():
             for addr in self.lcd_addresses:
                 try:
-                    print("trying", addr)
                     self.display = I2cLcd(self.i2c, addr, self.dimensions)
                 except Exception:
-                    print("failed", addr)
                     continue
                 else:
-                    print("success", addr)
                     return
 
     def write(self, text):
@@ -51,15 +49,15 @@ class DisplayWrapper:
 
 
 # UART audio output
-try:
-    AUDIO_OUT = UART(board.GPIO1, board.GPIO2, baudrate=9600)
+"""try:
+    AUDIO_OUT = UART(board.IO43, board.IO44, baudrate=9600)
 except Exception:
     print("AUDIO_OUT failed")
-    pass
+    pass"""
 
 # I2C display creation
 try:
-    DISPLAY = DisplayWrapper(board.GPIO41, board.GPIO42, rows=2, cols=16)
+    DISPLAY = DisplayWrapper(board.IO5, board.IO6, rows=2, cols=16)
 except Exception:
     print("DISPLAY failed")
     pass
@@ -67,15 +65,16 @@ except Exception:
 
 # Initialize RGB and inputs
 iopins = (
-    board.GPIO40,  # RGB data pin
-    board.GPIO14,  # Encoder pin 1
-    board.GPIO13,  # Encoder pin 2
-    board.GPIO12,  # Encoder button
-    board.GPIO7,  # Red button
-    board.GPIO4,  # Blue button
-    board.GPIO6,  # Red LED
-    board.GPIO5,  # Blue LED
+    board.IO43,  # RGB data pin
+    board.IO9,  # Encoder pin 1
+    board.IO8,  # Encoder pin 2
+    board.IO7,  # Encoder button
+    board.IO1,  # Red button
+    board.IO3,  # Blue button
+    board.IO2,  # Red LED
+    board.IO4,  # Blue LED
 )
+
 
 # RGB strip setup
 led_count = 58

@@ -1,3 +1,4 @@
+# type: ignore
 """
 Hardware declarations for the timer project.
 Used to easily change pin connections without changing the primary code.
@@ -22,7 +23,7 @@ class DisplayWrapper:
         rows=2,
         cols=16,
     ):
-        self.i2c = I2C(scl_pin, sda_pin)
+        self.i2c = I2C(scl_pin, sda_pin, frequency=20000)
         self.display = None
         self.lcd_addresses = lcd_addresses
         self.dimensions = (cols, rows)
@@ -32,13 +33,10 @@ class DisplayWrapper:
         while self.i2c.try_lock():
             for addr in self.lcd_addresses:
                 try:
-                    print("trying", addr)
                     self.display = I2cLcd(self.i2c, addr, self.dimensions)
                 except Exception:
-                    print("failed", addr)
                     continue
                 else:
-                    print("success", addr)
                     return
 
     def write(self, text):
@@ -52,14 +50,14 @@ class DisplayWrapper:
 
 # UART audio output
 try:
-    AUDIO_OUT = UART(board.GPIO1, board.GPIO2, baudrate=9600)
+    AUDIO_OUT = UART(board.IO43, board.IO44, baudrate=9600)
 except Exception:
     print("AUDIO_OUT failed")
     pass
 
 # I2C display creation
 try:
-    DISPLAY = DisplayWrapper(board.GPIO41, board.GPIO42, rows=2, cols=16)
+    DISPLAY = DisplayWrapper(board.IO5, board.IO6, rows=2, cols=16)
 except Exception:
     print("DISPLAY failed")
     pass
@@ -67,20 +65,21 @@ except Exception:
 
 # Initialize RGB and inputs
 iopins = (
-    board.GPIO40,  # RGB data pin
-    board.GPIO14,  # Encoder pin 1
-    board.GPIO13,  # Encoder pin 2
-    board.GPIO12,  # Encoder button
-    board.GPIO7,  # Red button
-    board.GPIO4,  # Blue button
-    board.GPIO6,  # Red LED
-    board.GPIO5,  # Blue LED
+    board.IO10,  # RGB data pin
+    board.IO9,  # Encoder pin 1
+    board.IO8,  # Encoder pin 2
+    board.IO7,  # Encoder button
+    board.IO1,  # Red button
+    board.IO3,  # Blue button
+    board.IO2,  # Red LED
+    board.IO4,  # Blue LED
 )
+
 
 # RGB strip setup
 led_count = 58
 try:
-    RGB_LED = NeoPixel(iopins[0], led_count, brightness=1, auto_write=False)  # type: ignore
+    RGB_LED = NeoPixel(iopins[0], led_count, brightness=0.1, auto_write=False)  # type: ignore
 except Exception:
     print("RGB_LED failed")
     pass

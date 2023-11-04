@@ -6,8 +6,8 @@ import board
 from busio import I2C, UART
 from digitalio import DigitalInOut, Pull, DriveMode
 from rotaryio import IncrementalEncoder
-from neopixel import NeoPixel  # type: ignore
-from adafruit_debouncer import Button  # type: ignore
+from neopixel import NeoPixel
+from adafruit_debouncer import Button
 from lcd_i2c8574_m import I2cLcd
 
 

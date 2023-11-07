@@ -424,9 +424,9 @@ async def start_deathclicks(game_mode):
                         break
             except Exception:
                 pass
-            if ENCB.short_count > 1:
-                break
-            await sleep(0)
+        if ENCB.short_count > 1:
+            break
+        await sleep(0)
     display_message(f"{local_state.team} team\nDeaths {local_state.lives_count}")
     RGBS.update(local_state.team)
     while not ENCB.long_press:
@@ -559,7 +559,7 @@ async def start_domination4(game_mode):
                         break
             except Exception:
                 pass
-            await sleep(0)
+        await sleep(0)
     display_message(
         f"RED: {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
@@ -648,9 +648,9 @@ async def start_koth(game_mode):
                         break
             except Exception:
                 pass
-            if ENCB.short_count > 1:
-                break
-            await sleep(0)
+        if ENCB.short_count > 1:
+            break
+        await sleep(0)
     display_message(
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )

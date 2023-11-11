@@ -2,17 +2,13 @@
 Imports
 """
 # region
-try:  # If running in CircuitPython
-    from time import monotonic  # type: ignore
-except ImportError:  # If running in MicroPython
-    from hardware import monotonic
-
+from time import monotonic
 from asyncio import sleep, create_task, gather, run, Event
 from gc import enable, mem_free  # type: ignore
 from random import randint
 from hardware import (
     DISPLAY,
-    AUDIO_OUT,
+    # AUDIO_OUT,
     RGB_LED,
     ENCODER,
     RED_LED,

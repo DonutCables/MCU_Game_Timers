@@ -8,11 +8,9 @@ from os import getenv
 from time import monotonic
 from asyncio import sleep, create_task, gather, run, Event
 from gc import enable, mem_free  # type: ignore
-from random import randint
+from random import randint, sample
 from hardware import (
     DISPLAY,
-    AUDIO_OUT,
-    RGB_LED,
     ENCODER,
     RED_LED,
     BLUE_LED,
@@ -20,8 +18,7 @@ from hardware import (
     REDB,
     BLUEB,
 )
-from audio_commands import Sound_Control
-from led_commands import RGB_Control, RGB_Settings
+
 
 # endregion
 """
@@ -79,6 +76,7 @@ class Game_States:
         self.game_length = 0
         self.cap_length = 0
         self.checkpoint = 1
+        self.dd_loop = 2
         self.timer_state = True
         self.cap_state = False
         self.red_time = 0
@@ -90,19 +88,26 @@ class Game_States:
         return BUCKET_IDS[self.id_index]
 
     @property
+    def bucket_interval(self):
+        interval = self.game_length // (self.bucket_count * self.dd_loop)
+        return interval
+
+    @property
     def bucket_interval_upper(self):
         """The upper interval for the current bucket"""
-        interval = self.game_length // (self.bucket_count * 2)
-        start = interval * (self.bucket_count * 2 - self.id_index)
-        stop = interval * (self.bucket_count * 2 - (self.id_index + 1))
+        start = self.bucket_interval * (
+            self.bucket_count * self.dd_loop - self.id_index
+        )
+        stop = self.bucket_interval * (
+            self.bucket_count * self.dd_loop - (self.id_index + 1)
+        )
         return (start, stop, -1)
 
     @property
     def bucket_interval_lower(self):
         """The lower interval for the current bucket"""
-        interval = self.game_length // (self.bucket_count * 2)
-        start = interval * (self.bucket_count - self.id_index)
-        stop = interval * (self.bucket_count - (self.id_index + 1))
+        start = self.bucket_interval * (self.bucket_count - self.id_index)
+        stop = self.bucket_interval * (self.bucket_count - (self.id_index + 1))
         return (start, stop, -1)
 
     @property
@@ -143,7 +148,6 @@ class Game_States:
         self.team = team
         RED_LED.value = "Red" in team
         BLUE_LED.value = "Blue" in team
-        RGBS.update(team, pattern, delay, hold=hold)
 
     def reset(self):
         """Resets all state variables to their initial values"""
@@ -156,6 +160,7 @@ class Game_States:
         self.game_length = 0
         self.cap_length = 0
         self.checkpoint = 1
+        self.dd_loop = 2
         self.timer_state = True
         self.cap_state = False
         self.red_time = 0
@@ -204,9 +209,6 @@ async def button_monitor():
 
 initial_state = Game_States()
 ENCS = ENC_States()
-SOUND = Sound_Control(AUDIO_OUT)
-RGB = RGB_Control(RGB_LED)
-RGBS = RGB_Settings()
 
 # endregion
 """
@@ -240,12 +242,7 @@ Primary function to select GameMode instance, then pass control to it
 async def main_menu():
     """Main menu for scrolling and displaying game options"""
     display_message(EXTRAS[randint(0, len(EXTRAS) - 1)])
-    RGBS.update(pattern="solid")
     await sleep(0.5)
-    for color in ["Red", "Blue", "Green"]:
-        initial_state.update_team(color, hold=True)
-        while RGBS.hold:
-            await sleep(0)
     display_message(f"Select a game:\n{MODES[initial_state.menu_index].name}")
     while True:
         if ENCS._was_rotated.is_set():
@@ -268,51 +265,14 @@ Per game mode functions
 # region
 
 
-async def start_attrition(game_mode):
-    """Function for Attrition game mode"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
-    RGBS.update(local_state.team)
-    while local_state.lives_count > 0:
-        if REDB.short_count > 0 or BLUEB.short_count > 0:
-            local_state.lives_count -= 1
-            display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
-            RGBS.update(local_state.team, "chase_off_on", 0.001)
-            await sleep(0)
-        if REDB.long_press or BLUEB.long_press:
-            local_state.lives_count = min(
-                initial_state.lives_count, local_state.lives_count + 1
-            )
-            display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
-            await sleep(0)
-        if ENCB.long_press:
-            display_message("exiting...")
-            await sleep(0.5)
-            break
-        await sleep(0)
-    display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    while True:
-        if ENCB.short_count > 0:
-            break
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
 async def start_basictimer(game_mode):
     """Function for Basic Timer mode"""
     local_state = initial_state.shallow_copy()
     await sleep(0.5)
     display_message(local_state.game_length_str)
     e.send("Start")
-    SOUND.play_track(28)
     await sleep(6)
     clock = monotonic()
-    read_time = monotonic()
-    message = b"empty"
-    msg_dec = message.decode()
     while local_state.game_length > 0:
         if local_state.timer_state:
             if monotonic() - clock >= 1:
@@ -322,8 +282,6 @@ async def start_basictimer(game_mode):
                         e.send("10")
                     except:
                         pass
-                if local_state.game_length < 11:
-                    SOUND.play_track(local_state.game_length + 15)
                 display_message(local_state.game_length_str)
                 clock = monotonic()
             if local_state.game_length == 60:
@@ -331,13 +289,11 @@ async def start_basictimer(game_mode):
                     e.send("60")
                 except:
                     pass
-                SOUND.play_track(27)
             if local_state.game_length == 30:
                 try:
                     e.send("30")
                 except:
                     pass
-                SOUND.play_track(26)
         if ENCB.short_count > 1:
             if local_state.timer_state == True:
                 local_state.timer_state = False
@@ -355,23 +311,6 @@ async def start_basictimer(game_mode):
             display_message("exiting...")
             await sleep(0.5)
             break
-        if monotonic() - read_time >= 0.1:
-            read_time = monotonic()
-            msg = e.read()
-            try:
-                if msg.msg is not None and msg.msg != message:
-                    message = msg.msg
-                    msg_dec = message.decode()
-                    if msg_dec == "Red":
-                        SOUND.play_track(11)
-                    elif msg_dec == "Blue":
-                        SOUND.play_track(12)
-                    elif msg_dec in ["Pause", "Resume"]:
-                        SOUND.play_track(35)
-                    elif msg_dec == "End":
-                        break
-            except Exception:
-                pass
         await sleep(0)
     try:
         e.send("End")
@@ -381,275 +320,76 @@ async def start_basictimer(game_mode):
     await game_mode.restart()
 
 
-async def start_control(game_mode):
-    """Function for Control game mode"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    display_message(
-        f"{game_mode.name} {local_state.game_length_str}\n{local_state.team} {local_state.cap_length_str}"
-    )
-    RGBS.update("Green")
-    clock = monotonic()
-    while (local_state.game_length > 0 and not local_state.cap_state) or (
-        local_state.cap_length > 0 and local_state.cap_state
-    ):
-        if local_state.timer_state:
-            if REDB.rose or BLUEB.rose:
-                local_state.cap_state = False
-                local_state.cap_length = (
-                    (local_state.cap_length - 1) // local_state.checkpoint + 1
-                ) * local_state.checkpoint
-                RGBS.update("Green", delay=0.001)
-            if REDB.fell or BLUEB.fell:
-                local_state.cap_state = True
-                RGBS.update(local_state.team, delay=0.001)
-            if monotonic() - clock >= 1:
-                local_state.game_length = max(0, local_state.game_length - 1)
-                if local_state.cap_state:
-                    local_state.cap_length -= 1
-                display_message(
-                    f"{game_mode.name} {local_state.game_length_str}\n{local_state.team} {local_state.cap_length_str}"
-                )
-                clock = monotonic()
-        if ENCB.short_count > 1:
-            local_state.timer_state = not local_state.timer_state
-        if ENCB.long_press:
-            display_message("exiting...")
-            await sleep(0.5)
-            break
-        await sleep(0)
-    if local_state.cap_length == 0:
-        display_message(f"{game_mode.name} {local_state.cap_length_str}\nPoint Locked")
-    else:
-        display_message(
-            f"{game_mode.name} {local_state.game_length_str}\n{local_state.team} {local_state.cap_length_str}"
-        )
-    if local_state.cap_length == 0:
-        RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    else:
-        RGBS.update()
-    while True:
-        if ENCB.short_count > 0:
-            break
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
-async def start_deathclicks(game_mode):
-    """Function for Death Clicks game mode"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    display_message(f"{local_state.team} team\nDeaths {local_state.lives_count}")
-    RGBS.update(local_state.team)
-    while not ENCB.long_press:
-        if REDB.short_count > 0 or BLUEB.short_count > 0:
-            local_state.lives_count += 1
-            display_message(
-                f"{local_state.team} team\nDeaths {local_state.lives_count}"
-            )
-            RGBS.update(local_state.team, "chase_off_on", 0.001)
-            await sleep(0)
-        if REDB.long_press or BLUEB.long_press:
-            local_state.lives_count = max(0, local_state.lives_count - 1)
-            display_message(
-                f"{local_state.team} team\nDeaths {local_state.lives_count}"
-            )
-            await sleep(0)
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
-async def start_domination2(game_mode):
-    """Function for Domination v2 game mode"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    display_message(f"{local_state.team} Team\n{local_state.game_length_str}")
-    local_state.update_team()
-    clock = monotonic()
-    while local_state.game_length > 0:
-        if local_state.timer_state:
-            if REDB.long_press:
-                local_state.update_team("Red", delay=0.0025)
-                display_message(
-                    f"{local_state.team} Team \n{local_state.game_length_str}"
-                )
-            elif BLUEB.long_press:
-                local_state.update_team("Blue", delay=0.0025)
-                display_message(
-                    f"{local_state.team} Team \n{local_state.game_length_str}"
-                )
-            if monotonic() - clock >= 1:
-                local_state.game_length -= 1
-                display_message(
-                    f"{local_state.team} Team\n{local_state.game_length_str}"
-                )
-                clock = monotonic()
-        if ENCB.short_count > 1:
-            local_state.timer_state = not local_state.timer_state
-            await sleep(0.1)
-        if ENCB.long_press:
-            display_message("exiting...")
-            await sleep(0.5)
-            break
-        await sleep(0)
-    display_message(f"{local_state.team} Team\nPoint Locked")
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    while True:
-        if ENCB.short_count > 0:
-            break
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
-async def start_domination3(game_mode):
-    """Function for Domination v3 game mode"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    local_state.red_time = local_state.game_length
-    local_state.blue_time = local_state.game_length
-    display_message(
-        f"RED: {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
-    local_state.update_team()
-    clock = monotonic()
-    while local_state.red_time > 0 and local_state.blue_time > 0:
-        if local_state.timer_state:
-            if REDB.long_press and local_state.team != "Red":
-                local_state.update_team("Red", delay=0.0025)
-            elif BLUEB.long_press and local_state.team != "Blue":
-                local_state.update_team("Blue", delay=0.0025)
-            if monotonic() - clock >= 1:
-                if local_state.team == "Red":
-                    local_state.red_time -= 1
-                elif local_state.team == "Blue":
-                    local_state.blue_time -= 1
-                display_message(
-                    f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-                )
-                clock = monotonic()
-        if ENCB.short_count > 1:
-            local_state.timer_state = not local_state.timer_state
-        if ENCB.long_press:
-            display_message("exiting...")
-            await sleep(0.5)
-            break
-        await sleep(0)
-    display_message(f"{local_state.team} Team\nPoint Locked")
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    while True:
-        if ENCB.short_count > 0:
-            break
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
-async def start_koth(game_mode):
-    """Function for KotH timers"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    local_state.red_time = local_state.game_length
-    local_state.blue_time = local_state.game_length
-    display_message(
-        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
-    local_state.update_team()
-    clock = monotonic()
-    while local_state.red_time > 0 and local_state.blue_time > 0:
-        if local_state.timer_state:
-            if REDB.fell and local_state.team != "Red":
-                local_state.update_team("Red", delay=0.0025)
-            if BLUEB.fell and local_state.team != "Blue":
-                local_state.update_team("Blue", delay=0.0025)
-            if monotonic() - clock >= 1:
-                if local_state.team == "Red":
-                    local_state.red_time -= 1
-                elif local_state.team == "Blue":
-                    local_state.blue_time -= 1
-                display_message(
-                    f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-                )
-                clock = monotonic()
-        if ENCB.short_count > 1:
-            local_state.timer_state = not local_state.timer_state
-        if ENCB.long_press:
-            display_message("exiting...")
-            await sleep(0.5)
-            break
-        await sleep(0)
-    display_message(
-        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    while True:
-        if ENCB.short_count > 0:
-            break
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
 async def start_doordash(game_mode):
     """Function for DoorDash/moving KotH game mode"""
     local_state = initial_state.shallow_copy()
     await sleep(0.5)
-    display_message(
-        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
+    bucket_list = range(1, local_state.bucket_count + 1)
+    bucket_order = sample(bucket_list, len(bucket_list))
+    if local_state.dd_loop == 2:
+        bucket_order.append(*sample(bucket_list, len(bucket_list)))
+    print(bucket_order)
+    bucket_interval = initial_state.bucket_interval
+    print(bucket_interval)
+    display_message(local_state.game_length_str)
+    e.send("Start")
+    await sleep(6)
     clock = monotonic()
     while local_state.game_length > 0:
         if local_state.timer_state:
-            if local_state.game_length in range(
-                *initial_state.bucket_interval_upper
-            ) or local_state.game_length in range(*initial_state.bucket_interval_lower):
-                if not local_state.cap_state:
-                    local_state.update_team()
-                    local_state.cap_state = True
-            else:
-                if local_state.cap_state:
-                    RGBS.update(delay=0.0025)
-                    local_state.cap_state = False
-            if local_state.cap_state:
-                if REDB.fell and local_state.team != "Red":
-                    local_state.update_team("Red", delay=0.0025)
-                elif BLUEB.fell and local_state.team != "Blue":
-                    local_state.update_team("Blue", delay=0.0025)
+            if local_state.game_length % bucket_interval == 0:
+                # If the game length is a multiple of the bucket interval, send a message to the next bucket
+                interval_count = local_state.game_length // bucket_interval
+                try:
+                    e.send("Inactive")
+                    # deactivate all first
+                    e.send("Active", e.peers[bucket_order[interval_count - 1] + 1])
+                    # activate peer 2-6, choosing from bucket_order via interval_count
+                except:
+                    print("fucky wucky")
+                    pass
+                print(f"bucket {bucket_order[interval_count - 1]} active")
             if monotonic() - clock >= 1:
                 local_state.game_length -= 1
-                if local_state.cap_state:
-                    if local_state.team == "Red":
-                        local_state.red_time += 1
-                    elif local_state.team == "Blue":
-                        local_state.blue_time += 1
-                display_message(
-                    f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-                )
+                if local_state.game_length == 10:
+                    try:
+                        e.send("10")
+                    except:
+                        pass
+                if local_state.game_length == 30:
+                    try:
+                        e.send("30")
+                    except:
+                        pass
+                if local_state.game_length == 60:
+                    try:
+                        e.send("60")
+                    except:
+                        pass
+                display_message(local_state.game_length_str)
                 clock = monotonic()
         if ENCB.short_count > 1:
-            local_state.timer_state = not local_state.timer_state
+            if local_state.timer_state == True:
+                local_state.timer_state = False
+                try:
+                    e.send("Pause")
+                except:
+                    pass
+            elif local_state.timer_state == False:
+                local_state.timer_state = True
+                try:
+                    e.send("Resume")
+                except:
+                    pass
         if ENCB.long_press:
             display_message("exiting...")
             await sleep(0.5)
             break
         await sleep(0)
-    display_message(
-        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
-    if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", delay=0.0025)
-    elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", delay=0.0025)
-    else:
-        local_state.update_team("Green", delay=0.0025)
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-
-    while True:
-        if ENCB.short_count > 0:
-            break
-        await sleep(0)
+    try:
+        e.send("End")
+    except:
+        pass
     await sleep(0.1)
     await game_mode.restart()
 
@@ -826,7 +566,6 @@ class GameMode:
         while True:
             await sleep(0.5)
             display_message(self.set_message())
-            RGBS.update()
             await sleep(0.5)
             while True:
                 if ENCB.short_count > 0:
@@ -845,7 +584,6 @@ class GameMode:
         """Function for restarting the program"""
         await sleep(0.5)
         RESTART_OPTIONS = ["No", "Yes"]
-        RGBS.update()
         display_message(f"Restart?:\n{RESTART_OPTIONS[initial_state.restart_index]}")
         await sleep(0.5)
 
@@ -881,20 +619,8 @@ class GameMode:
 
 
 MODES = [
-    GameMode("Attrition", has_lives=True, has_team=True),
     GameMode("Basic Timer", has_game_length=True),
-    GameMode(
-        "Control",
-        has_team=True,
-        has_game_length=True,
-        has_cap_length=True,
-        has_checkpoint=True,
-    ),
-    GameMode("Death Clicks", has_team=True),
-    GameMode("Domination 2", has_game_length=True),
-    GameMode("Domination 3", has_game_length=True),
     GameMode("DoorDash", has_id=True, has_game_length=True),
-    GameMode("KotH", has_game_length=True),
 ]
 # endregion
 """
@@ -903,7 +629,8 @@ ESP-NOW setup
 # region
 
 e = espnow.ESPNow()
-e.peers.append(espnow.Peer(mac=unhexlify(getenv("SOUNDBOX_MAC")))),  # type: ignore
+e.peers.append(espnow.Peer(mac=unhexlify(getenv("SOUNDBOX1_MAC")))),  # type: ignore
+e.peers.append(espnow.Peer(mac=unhexlify(getenv("SOUNDBOX2_MAC")))),  # type: ignore
 e.peers.append(espnow.Peer(mac=unhexlify(getenv("BUCKETA_MAC")))),  # type: ignore
 e.peers.append(espnow.Peer(mac=unhexlify(getenv("BUCKETB_MAC")))),  # type: ignore
 e.peers.append(espnow.Peer(mac=unhexlify(getenv("BUCKETC_MAC")))),  # type: ignore
@@ -918,8 +645,6 @@ Main program
 
 enable()
 
-SOUND.set_vol(30)
-
 
 async def game_task_chain():
     """Task chain for running the program"""
@@ -930,10 +655,9 @@ async def game_task_chain():
 
 async def main():
     game_task = create_task(game_task_chain())
-    rgb_task = create_task(RGBS.rgb_control(RGB))
     enc_task = create_task(ENCS.update())
     button_task = create_task(button_monitor())
-    await gather(game_task, rgb_task, enc_task, button_task)
+    await gather(game_task, enc_task, button_task)
 
 
 if __name__ == "__main__":

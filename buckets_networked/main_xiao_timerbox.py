@@ -8,7 +8,7 @@ from os import getenv
 from time import monotonic
 from asyncio import sleep, create_task, gather, run, Event
 from gc import enable, mem_free  # type: ignore
-from random import randint, sample
+from random import randint, randrange
 from hardware import (
     DISPLAY,
     ENCODER,
@@ -324,10 +324,17 @@ async def start_doordash(game_mode):
     """Function for DoorDash/moving KotH game mode"""
     local_state = initial_state.shallow_copy()
     await sleep(0.5)
-    bucket_list = range(1, local_state.bucket_count + 1)
-    bucket_order = sample(bucket_list, len(bucket_list))
+    bucket_list = []
+    while len(bucket_list) < local_state.bucket_count:
+        for i in range(1, local_state.bucket_count + 1):
+            bucket_list.append(i)
     if local_state.dd_loop == 2:
-        bucket_order.append(*sample(bucket_list, len(bucket_list)))
+        while len(bucket_list) < local_state.bucket_count * 2:
+            for i in range(1, local_state.bucket_count + 1):
+                bucket_list.append(i)
+    bucket_order = []
+    while len(bucket_list) > 0:
+        bucket_order.append(bucket_list.pop(randrange(len(bucket_list))))
     print(bucket_order)
     bucket_interval = initial_state.bucket_interval
     print(bucket_interval)
@@ -339,16 +346,17 @@ async def start_doordash(game_mode):
         if local_state.timer_state:
             if local_state.game_length % bucket_interval == 0:
                 # If the game length is a multiple of the bucket interval, send a message to the next bucket
-                interval_count = local_state.game_length // bucket_interval
+                interval_count = (local_state.game_length // bucket_interval) - 1
                 try:
                     e.send("Inactive")
                     # deactivate all first
-                    e.send("Active", e.peers[bucket_order[interval_count - 1] + 1])
+                    await sleep(1)
+                    e.send("Active", e.peers[bucket_order[interval_count] + 1])
                     # activate peer 2-6, choosing from bucket_order via interval_count
                 except:
                     print("fucky wucky")
                     pass
-                print(f"bucket {bucket_order[interval_count - 1]} active")
+                print(f"bucket {bucket_order[interval_count]} active")
             if monotonic() - clock >= 1:
                 local_state.game_length -= 1
                 if local_state.game_length == 10:
@@ -492,6 +500,17 @@ class GameMode:
                 display_message(
                     f"{self.name}\nBucket Count: {initial_state.bucket_count}"
                 )
+            if ENCB.short_count > 0:
+                break
+            await sleep(0)
+        display_message(f"{self.name}\nLoop Count: {initial_state.dd_loop}")
+        await sleep(0)
+        while True:
+            if ENCS._was_rotated.is_set():
+                initial_state.dd_loop = max(
+                    1, (ENCS.encoder_handler(initial_state.dd_loop, 1) % 3)
+                )
+                display_message(f"{self.name}\nLoop Count: {initial_state.dd_loop}")
             if ENCB.short_count > 0:
                 break
             await sleep(0)

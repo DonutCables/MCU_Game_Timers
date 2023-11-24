@@ -442,7 +442,7 @@ async def start_domination3(game_mode):
     local_state.red_time = local_state.game_length
     local_state.blue_time = local_state.game_length
     display_message(
-        f"RED: {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     local_state.update_team()
     clock = monotonic()
@@ -485,7 +485,7 @@ async def start_domination4(game_mode):
     local_state.red_time = 0
     local_state.blue_time = 0
     display_message(
-        f"RED: {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     local_state.update_team()
     clock = monotonic()
@@ -645,7 +645,7 @@ async def start_doordash2(game_mode):
     msg_dec = message.decode()
     display_message("Waiting for timer...")
     while True:
-        try:
+        if e:
             msg = e.read()
             if msg.msg is not None and msg.msg != message:
                 message = msg.msg
@@ -653,8 +653,6 @@ async def start_doordash2(game_mode):
                 if msg_dec == "Start":
                     await sleep(6)
                     break
-        except Exception:
-            pass
         if ENCB.short_count > 1:
             break
         await sleep(0)
@@ -686,9 +684,10 @@ async def start_doordash2(game_mode):
             display_message("exiting...")
             await sleep(0.5)
             break
-        try:
+        if e:
             msg = e.read()
             if msg is not None and msg != message:
+                print(msg.msg)
                 message = msg.msg
                 msg_dec = message.decode()
                 if msg_dec == "Pause":
@@ -703,13 +702,12 @@ async def start_doordash2(game_mode):
                 elif msg_dec == "Active":
                     local_state.cap_state = True
                     local_state.update_team()
+                    await sleep(0.1)
                 elif msg_dec == "Inactive":
                     local_state.cap_state = False
                     RGBS.update(delay=0.0025)
                 elif msg_dec == "End":
                     break
-        except Exception:
-            pass
         await sleep(0)
     display_message(
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"

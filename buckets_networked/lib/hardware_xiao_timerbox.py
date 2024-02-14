@@ -23,7 +23,7 @@ class DisplayWrapper:
         rows=2,
         cols=16,
     ):
-        self.i2c = I2C(scl_pin, sda_pin, frequency=20000)
+        self.i2c = I2C(scl_pin, sda_pin)
         self.display = None
         self.lcd_addresses = lcd_addresses
         self.dimensions = (cols, rows)

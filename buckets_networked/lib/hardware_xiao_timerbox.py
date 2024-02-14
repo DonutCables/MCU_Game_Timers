@@ -2,12 +2,12 @@
 """
 Hardware declarations for the timer project.
 Used to easily change pin connections without changing the primary code.
+This file is for the Timerbox component.
 """
 import board
-from busio import I2C, UART
+from busio import I2C
 from digitalio import DigitalInOut, Pull, DriveMode
 from rotaryio import IncrementalEncoder
-from neopixel import NeoPixel
 from adafruit_debouncer import Button
 from lcd_i2c8574_m import I2cLcd
 
@@ -48,22 +48,16 @@ class DisplayWrapper:
             self.display.clear()
 
 
-# UART audio output
-try:
-    AUDIO_OUT = UART(board.IO43, board.IO44, baudrate=9600)
-except Exception:
-    print("AUDIO_OUT failed")
-    pass
-
 # I2C display creation
 try:
     DISPLAY = DisplayWrapper(board.IO5, board.IO6, rows=2, cols=16)
-except Exception:
+except Exception as e:
     print("DISPLAY failed")
+    print(e)
     pass
 
 
-# Initialize RGB and inputs
+# Group IO pins
 iopins = (
     board.IO10,  # RGB data pin
     board.IO9,  # Encoder pin 1
@@ -75,48 +69,28 @@ iopins = (
     board.IO4,  # Blue LED
 )
 
-
-# RGB strip setup
-led_count = 58
-try:
-    RGB_LED = NeoPixel(iopins[0], led_count, brightness=0.1, auto_write=False)  # type: ignore
-except Exception:
-    print("RGB_LED failed")
-    pass
-
 # Encoder rotary setup
 try:
     ENCODER = IncrementalEncoder(iopins[1], iopins[2])
-except Exception:
+except Exception as e:
     print("ENCODER failed")
+    print(e)
     pass
 
 # Setup button DIO objects
 try:
-    ENC, RED, BLUE = (DigitalInOut(pin) for pin in iopins[3:6])
-    for button in [ENC, RED, BLUE]:
-        button.switch_to_input(Pull.UP)
-except Exception:
+    ENC = DigitalInOut(iopins[3])
+    ENC.switch_to_input(Pull.UP)
+except Exception as e:
     print("BUTTONS failed")
+    print(e)
     pass
 
 # Create debouncer objects from DIO buttons
 hold_ms = 1000
 try:
-    ENCB, REDB, BLUEB = (
-        Button(ENC, long_duration_ms=hold_ms * 2),
-        Button(RED, long_duration_ms=hold_ms),
-        Button(BLUE, long_duration_ms=hold_ms),
-    )
-except Exception:
+    ENCB = Button(ENC, long_duration_ms=hold_ms * 2)
+except Exception as e:
     print("DEBOUNCERS failed")
-    pass
-
-# Team button LED setup
-try:
-    RED_LED, BLUE_LED = (DigitalInOut(pin) for pin in iopins[6:8])
-    for led in [RED_LED, BLUE_LED]:
-        led.switch_to_output(False, DriveMode.PUSH_PULL)
-except Exception:
-    print("LEDs failed")
+    print(e)
     pass

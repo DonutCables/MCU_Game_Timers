@@ -12,11 +12,7 @@ from random import randint, randrange
 from hardware import (
     DISPLAY,
     ENCODER,
-    RED_LED,
-    BLUE_LED,
     ENCB,
-    REDB,
-    BLUEB,
 )
 
 
@@ -146,8 +142,6 @@ class Game_States:
     ):
         """Updates button LED and RGB state based on team"""
         self.team = team
-        RED_LED.value = "Red" in team
-        BLUE_LED.value = "Blue" in team
 
     def reset(self):
         """Resets all state variables to their initial values"""
@@ -202,8 +196,6 @@ async def button_monitor():
     """Async function for monitoring button presses"""
     while True:
         ENCB.update()
-        REDB.update()
-        BLUEB.update()
         await sleep(0)
 
 
@@ -314,6 +306,7 @@ async def start_basictimer(game_mode):
         await sleep(0)
     try:
         e.send("End")
+        await sleep(0)
     except:
         pass
     await sleep(0.1)
@@ -396,6 +389,7 @@ async def start_doordash(game_mode):
         await sleep(0)
     try:
         e.send("End")
+        await sleep(0)
     except:
         pass
     await sleep(0.1)
@@ -521,14 +515,6 @@ class GameMode:
         await sleep(0.5)
         display_message(f"{self.name}\nTeam:")
         while True:
-            if REDB.rose:
-                initial_state.update_team("Red", delay=0.0025)
-                display_message(f"{self.name}\nTeam {initial_state.team}")
-                await sleep(0.1)
-            if BLUEB.rose:
-                initial_state.update_team("Blue", delay=0.0025)
-                display_message(f"{self.name}\nTeam {initial_state.team}")
-                await sleep(0.1)
             if ENCB.short_count > 0:
                 break
             await sleep(0)
@@ -605,7 +591,6 @@ class GameMode:
         RESTART_OPTIONS = ["No", "Yes"]
         display_message(f"Restart?:\n{RESTART_OPTIONS[initial_state.restart_index]}")
         await sleep(0.5)
-
         while True:
             if ENCS._was_rotated.is_set():
                 initial_state.restart_index = ENCS.encoder_handler(

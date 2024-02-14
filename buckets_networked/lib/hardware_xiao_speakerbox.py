@@ -2,6 +2,7 @@
 """
 Hardware declarations for the timer project.
 Used to easily change pin connections without changing the primary code.
+This file is for the Speakerbox components.
 """
 import board
 from busio import UART

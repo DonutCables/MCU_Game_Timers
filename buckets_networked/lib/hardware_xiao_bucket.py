@@ -2,6 +2,7 @@
 """
 Hardware declarations for the timer project.
 Used to easily change pin connections without changing the primary code.
+This file is for the Bucket components.
 """
 import board
 from busio import I2C  # , UART

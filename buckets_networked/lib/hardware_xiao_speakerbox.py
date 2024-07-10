@@ -10,6 +10,7 @@ from busio import UART
 # UART audio output
 try:
     AUDIO_OUT = UART(board.IO43, board.IO44, baudrate=9600)
-except Exception:
+except Exception as e:
     print("AUDIO_OUT failed")
+    print(e)
     pass

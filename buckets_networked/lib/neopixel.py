@@ -28,7 +28,7 @@ except ImportError:
     pass
 
 
-__version__ = "6.3.10"
+__version__ = "6.3.11"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel.git"
 
 

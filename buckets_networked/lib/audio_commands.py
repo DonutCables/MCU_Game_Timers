@@ -1,5 +1,5 @@
 """
-A translation for making nice clean functions from the UART mishmash being sent to the module.
+A translation library for working with UART commands for Catalex MP3 modules.
 """
 from busio import UART
 

@@ -24,7 +24,7 @@ Implementation Notes
 # imports
 from micropython import const
 
-__version__ = "1.0.12"
+__version__ = "1.0.13"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_ticks.git"
 
 _TICKS_PERIOD = const(1 << 29)

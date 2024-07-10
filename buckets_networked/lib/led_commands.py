@@ -1,3 +1,6 @@
+"""
+Customized LED commands for RGB strip via Adafruit NeoPixel.
+"""
 from asyncio import sleep
 from neopixel import NeoPixel
 

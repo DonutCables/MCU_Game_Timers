@@ -16,23 +16,37 @@ Core
 """
 
 from adafruit_ticks import ticks_ms as ticks, ticks_diff, ticks_add
-import sys, select, traceback
+import sys, select
+
+try:
+    from traceback import print_exception
+except:
+    from .traceback import print_exception
 
 # Import TaskQueue and Task, preferring built-in C code over Python code
 try:
     from _asyncio import TaskQueue, Task
-except:
+except ImportError:
     from .task import TaskQueue, Task
-
 
 ################################################################################
 # Exceptions
 
 
-class CancelledError(BaseException):
-    """Injected into a task when calling `Task.cancel()`"""
+# Depending on the release of CircuitPython these errors may or may not
+# exist in the C implementation of `_asyncio`.  However, when they
+# do exist, they must be preferred over the Python code.
+try:
+    from _asyncio import CancelledError, InvalidStateError
+except (ImportError, AttributeError):
+    class CancelledError(BaseException):
+        """Injected into a task when calling `Task.cancel()`"""
+        pass
 
-    pass
+
+    class InvalidStateError(Exception):
+        """Can be raised in situations like setting a result value for a task object that already has a result value set."""
+        pass
 
 
 class TimeoutError(Exception):
@@ -371,7 +385,7 @@ class Loop:
         """The default exception handler that is called."""
 
         exc = context["exception"]
-        traceback.print_exception(None, exc, exc.__traceback__)
+        print_exception(None, exc, exc.__traceback__)
 
     def call_exception_handler(context):
         """Call the current exception handler. The argument *context* is passed through

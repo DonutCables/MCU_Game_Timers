@@ -13,7 +13,7 @@
 
 from .core import *
 
-__version__ = "1.1.0"
+__version__ = "1.3.2"
 __repo__ = "https://github.com/Adafruit/Adafruit_CircuitPython_asyncio.git"
 
 _attrs = {

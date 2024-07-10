@@ -25,7 +25,7 @@ Implementation Notes
 
 # imports
 
-__version__ = "2.0.7"
+__version__ = "2.0.8"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_Debouncer.git"
 
 from micropython import const

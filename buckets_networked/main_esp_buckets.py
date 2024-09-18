@@ -16,6 +16,7 @@ from hardware import (
     ENCODER,
     RED_LED,
     BLUE_LED,
+    ENC,
     ENCB,
     REDB,
     BLUEB,
@@ -1019,5 +1020,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    run(main())
+    if ENC:
+        run(main())
+    elif not ENC:
+        pass
 # endregion

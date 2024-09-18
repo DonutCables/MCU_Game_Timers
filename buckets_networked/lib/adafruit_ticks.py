@@ -24,7 +24,7 @@ Implementation Notes
 # imports
 from micropython import const
 
-__version__ = "1.0.13"
+__version__ = "1.1.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_ticks.git"
 
 _TICKS_PERIOD = const(1 << 29)
@@ -122,7 +122,9 @@ except (ImportError, NameError):
 
 def ticks_add(ticks: int, delta: int) -> int:
     "Add a delta to a base number of ticks, performing wraparound at 2**29ms."
-    return (ticks + delta) % _TICKS_PERIOD
+    if -_TICKS_HALFPERIOD < delta < _TICKS_HALFPERIOD:
+        return (ticks + delta) % _TICKS_PERIOD
+    raise OverflowError("ticks interval overflow")
 
 
 def ticks_diff(ticks1: int, ticks2: int) -> int:

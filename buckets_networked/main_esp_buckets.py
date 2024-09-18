@@ -435,8 +435,8 @@ async def start_domination2(game_mode):
     await game_mode.restart()
 
 
-async def start_domination3(game_mode):
-    """Function for Domination v3 game mode"""
+async def start_lockout(game_mode):
+    """Function for Lockout game mode"""
     local_state = initial_state.shallow_copy()
     await sleep(0.5)
     local_state.red_time = local_state.game_length
@@ -978,7 +978,7 @@ MODES = [
     ),
     GameMode("Death Clicks", has_team=True),
     GameMode("Domination 2", has_game_length=True),
-    GameMode("Domination 3", has_game_length=True),
+    GameMode("Lockout", has_game_length=True),
     GameMode("Domination", has_game_length=True),
     GameMode("DoorDash 1", has_id=True, has_game_length=True),
     GameMode("DoorDash 2", has_id=True),

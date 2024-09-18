@@ -312,6 +312,31 @@ async def start_attrition(game_mode):
     await game_mode.restart()
 
 
+async def start_deathclicks(game_mode):
+    """Function for Death Clicks game mode"""
+    local_state = initial_state.shallow_copy()
+    await sleep(0.5)
+    display_message(f"{local_state.team} team\nDeaths {local_state.lives_count}")
+    RGBS.update(local_state.team)
+    while not ENCB.long_press:
+        if REDB.short_count > 0 or BLUEB.short_count > 0:
+            local_state.lives_count += 1
+            display_message(
+                f"{local_state.team} team\nDeaths {local_state.lives_count}"
+            )
+            RGBS.update(local_state.team, "chase_off_on", 0.001)
+            await sleep(0)
+        if REDB.long_press or BLUEB.long_press:
+            local_state.lives_count = max(0, local_state.lives_count - 1)
+            display_message(
+                f"{local_state.team} team\nDeaths {local_state.lives_count}"
+            )
+            await sleep(0)
+        await sleep(0)
+    await sleep(0.1)
+    await game_mode.restart()
+
+
 async def start_control(game_mode):
     """Function for Control game mode"""
     local_state = initial_state.shallow_copy()
@@ -359,117 +384,6 @@ async def start_control(game_mode):
         RGBS.update(local_state.team, "chase_on_off", repeat=-1)
     else:
         RGBS.update()
-    while True:
-        if ENCB.short_count > 0:
-            break
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
-async def start_deathclicks(game_mode):
-    """Function for Death Clicks game mode"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    display_message(f"{local_state.team} team\nDeaths {local_state.lives_count}")
-    RGBS.update(local_state.team)
-    while not ENCB.long_press:
-        if REDB.short_count > 0 or BLUEB.short_count > 0:
-            local_state.lives_count += 1
-            display_message(
-                f"{local_state.team} team\nDeaths {local_state.lives_count}"
-            )
-            RGBS.update(local_state.team, "chase_off_on", 0.001)
-            await sleep(0)
-        if REDB.long_press or BLUEB.long_press:
-            local_state.lives_count = max(0, local_state.lives_count - 1)
-            display_message(
-                f"{local_state.team} team\nDeaths {local_state.lives_count}"
-            )
-            await sleep(0)
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
-async def start_domination2(game_mode):
-    """Function for Domination v2 game mode"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    display_message(f"{local_state.team} Team\n{local_state.game_length_str}")
-    local_state.update_team()
-    clock = monotonic()
-    while local_state.game_length > 0:
-        if local_state.timer_state:
-            if REDB.long_press:
-                local_state.update_team("Red", delay=0.0025)
-                display_message(
-                    f"{local_state.team} Team \n{local_state.game_length_str}"
-                )
-            elif BLUEB.long_press:
-                local_state.update_team("Blue", delay=0.0025)
-                display_message(
-                    f"{local_state.team} Team \n{local_state.game_length_str}"
-                )
-            if monotonic() - clock >= 1:
-                local_state.game_length -= 1
-                display_message(
-                    f"{local_state.team} Team\n{local_state.game_length_str}"
-                )
-                clock = monotonic()
-        if ENCB.short_count > 1:
-            local_state.timer_state = not local_state.timer_state
-            await sleep(0.1)
-        if ENCB.long_press:
-            display_message("exiting...")
-            await sleep(0.5)
-            break
-        await sleep(0)
-    display_message(f"{local_state.team} Team\nPoint Locked")
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    while True:
-        if ENCB.short_count > 0:
-            break
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
-async def start_lockout(game_mode):
-    """Function for Lockout game mode"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    local_state.red_time = local_state.game_length
-    local_state.blue_time = local_state.game_length
-    display_message(
-        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
-    local_state.update_team()
-    clock = monotonic()
-    while local_state.red_time > 0 and local_state.blue_time > 0:
-        if local_state.timer_state:
-            if REDB.long_press and local_state.team != "Red":
-                local_state.update_team("Red", delay=0.0025)
-            elif BLUEB.long_press and local_state.team != "Blue":
-                local_state.update_team("Blue", delay=0.0025)
-            if monotonic() - clock >= 1:
-                if local_state.team == "Red":
-                    local_state.red_time -= 1
-                elif local_state.team == "Blue":
-                    local_state.blue_time -= 1
-                display_message(
-                    f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-                )
-                clock = monotonic()
-        if ENCB.short_count > 1:
-            local_state.timer_state = not local_state.timer_state
-        if ENCB.long_press:
-            display_message("exiting...")
-            await sleep(0.5)
-            break
-        await sleep(0)
-    display_message(f"{local_state.team} Team\nPoint Locked")
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
     while True:
         if ENCB.short_count > 0:
             break
@@ -575,7 +489,93 @@ async def start_koth(game_mode):
     await game_mode.restart()
 
 
-async def start_doordash1(game_mode):
+async def start_lockout(game_mode):
+    """Function for Lockout game mode"""
+    local_state = initial_state.shallow_copy()
+    await sleep(0.5)
+    local_state.red_time = local_state.game_length
+    local_state.blue_time = local_state.game_length
+    display_message(
+        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+    )
+    local_state.update_team()
+    clock = monotonic()
+    while local_state.red_time > 0 and local_state.blue_time > 0:
+        if local_state.timer_state:
+            if REDB.long_press and local_state.team != "Red":
+                local_state.update_team("Red", delay=0.0025)
+            elif BLUEB.long_press and local_state.team != "Blue":
+                local_state.update_team("Blue", delay=0.0025)
+            if monotonic() - clock >= 1:
+                if local_state.team == "Red":
+                    local_state.red_time -= 1
+                elif local_state.team == "Blue":
+                    local_state.blue_time -= 1
+                display_message(
+                    f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+                )
+                clock = monotonic()
+        if ENCB.short_count > 1:
+            local_state.timer_state = not local_state.timer_state
+        if ENCB.long_press:
+            display_message("exiting...")
+            await sleep(0.5)
+            break
+        await sleep(0)
+    display_message(f"{local_state.team} Team\nPoint Locked")
+    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+    while True:
+        if ENCB.short_count > 0:
+            break
+        await sleep(0)
+    await sleep(0.1)
+    await game_mode.restart()
+
+
+async def start_territories(game_mode):
+    """Function for Territories(b) game mode"""
+    local_state = initial_state.shallow_copy()
+    await sleep(0.5)
+    display_message(f"{local_state.team} Team\n{local_state.game_length_str}")
+    local_state.update_team()
+    clock = monotonic()
+    while local_state.game_length > 0:
+        if local_state.timer_state:
+            if REDB.long_press:
+                local_state.update_team("Red", delay=0.0025)
+                display_message(
+                    f"{local_state.team} Team \n{local_state.game_length_str}"
+                )
+            elif BLUEB.long_press:
+                local_state.update_team("Blue", delay=0.0025)
+                display_message(
+                    f"{local_state.team} Team \n{local_state.game_length_str}"
+                )
+            if monotonic() - clock >= 1:
+                local_state.game_length -= 1
+                display_message(
+                    f"{local_state.team} Team\n{local_state.game_length_str}"
+                )
+                clock = monotonic()
+        if ENCB.short_count > 1:
+            local_state.timer_state = not local_state.timer_state
+            await sleep(0.1)
+        if ENCB.long_press:
+            display_message("exiting...")
+            await sleep(0.5)
+            break
+        await sleep(0)
+    display_message(f"{local_state.team} Team\nPoint Locked")
+    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+    while True:
+        if ENCB.short_count > 0:
+            break
+        await sleep(0)
+    await sleep(0.1)
+    await game_mode.restart()
+
+
+async def start_crazyking(game_mode):
     """Function for DoorDash/moving KotH game mode"""
     local_state = initial_state.shallow_copy()
     await sleep(0.5)
@@ -637,7 +637,7 @@ async def start_doordash1(game_mode):
     await game_mode.restart()
 
 
-async def start_doordash2(game_mode):
+async def start_crazykingw(game_mode):
     """Function for DoorDash/moving KotH game mode"""
     local_state = initial_state.shallow_copy()
     await sleep(0.5)
@@ -969,6 +969,7 @@ class GameMode:
 
 MODES = [
     GameMode("Attrition", has_lives=True, has_team=True),
+    GameMode("Death Clicks", has_team=True),
     GameMode(
         "Control",
         has_team=True,
@@ -976,13 +977,12 @@ MODES = [
         has_cap_length=True,
         has_checkpoint=True,
     ),
-    GameMode("Death Clicks", has_team=True),
-    GameMode("Domination 2", has_game_length=True),
-    GameMode("Lockout", has_game_length=True),
     GameMode("Domination", has_game_length=True),
-    GameMode("DoorDash 1", has_id=True, has_game_length=True),
-    GameMode("DoorDash 2", has_id=True),
     GameMode("KotH", has_game_length=True),
+    GameMode("Lockout", has_game_length=True),
+    GameMode("Territories", has_game_length=True),
+    GameMode("Crazy King", has_id=True, has_game_length=True),
+    GameMode("Crazy King W", has_id=True),
 ]
 # endregion
 """

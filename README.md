@@ -17,11 +17,11 @@ This change is primarily due to my own coding ability, but also to make modifica
 
 
 ## Code Versions
-[Standalone Version](buckets_standalone/README.md)
+[Standalone Version](buckets_standalone)
 
 This is the simplest version of the timer buckets with no networking capabilities. A good option if you're looking for a couple buckets and lower hardware costs.
 
-[Networked Version](buckets_networked/README.md)
+[Networked Version](buckets_networked)
 
 This version is built for multiple buckets to communicate with each other and a central hub. This version is more complex and requires more hardware, but allows for more advanced game modes and features.
 

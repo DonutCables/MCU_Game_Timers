@@ -16,7 +16,6 @@ from hardware import (
     ENCODER,
     RED_LED,
     BLUE_LED,
-    ENC,
     ENCB,
     REDB,
     BLUEB,
@@ -445,51 +444,6 @@ async def start_domination(game_mode):
     await game_mode.restart()
 
 
-async def start_koth(game_mode):
-    """Function for KotH timers"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    local_state.red_time = local_state.game_length
-    local_state.blue_time = local_state.game_length
-    display_message(
-        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
-    local_state.update_team()
-    clock = monotonic()
-    while local_state.red_time > 0 and local_state.blue_time > 0:
-        if local_state.timer_state:
-            if REDB.fell and local_state.team != "Red":
-                local_state.update_team("Red", delay=0.0025)
-            if BLUEB.fell and local_state.team != "Blue":
-                local_state.update_team("Blue", delay=0.0025)
-            if monotonic() - clock >= 1:
-                if local_state.team == "Red":
-                    local_state.red_time -= 1
-                elif local_state.team == "Blue":
-                    local_state.blue_time -= 1
-                display_message(
-                    f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-                )
-                clock = monotonic()
-        if ENCB.short_count > 1:
-            local_state.timer_state = not local_state.timer_state
-        if ENCB.long_press:
-            display_message("exiting...")
-            await sleep(0.5)
-            break
-        await sleep(0)
-    display_message(
-        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    while True:
-        if ENCB.short_count > 0:
-            break
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
 async def start_lockout(game_mode):
     """Function for Lockout game mode"""
     local_state = initial_state.shallow_copy()
@@ -523,7 +477,9 @@ async def start_lockout(game_mode):
             await sleep(0.5)
             break
         await sleep(0)
-    display_message(f"{local_state.team} Team\nPoint Locked")
+    display_message(
+        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+    )
     RGBS.update(local_state.team, "chase_on_off", repeat=-1)
     while True:
         if ENCB.short_count > 0:
@@ -979,7 +935,6 @@ MODES = [
         has_checkpoint=True,
     ),
     GameMode("Domination", has_game_length=True),
-    GameMode("KotH", has_game_length=True),
     GameMode("Lockout", has_game_length=True),
     GameMode("Territories", has_game_length=True),
     GameMode("Crazy King", has_id=True, has_game_length=True),
@@ -1019,9 +974,10 @@ async def main():
     await gather(game_task, rgb_task, enc_task, button_task)
 
 
-if __name__ == "__main__":
-    if ENC:
+ENCB.update()
+if ENCB.value:
+    if __name__ == "__main__":
         run(main())
-    elif not ENC:
-        pass
+else:
+    pass
 # endregion

@@ -392,6 +392,158 @@ async def start_control(game_mode):
     await game_mode.restart()
 
 
+async def start_crazyking(game_mode):
+    """Function for DoorDash/moving KotH game mode"""
+    local_state = initial_state.shallow_copy()
+    await sleep(0.5)
+    display_message(
+        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+    )
+    clock = monotonic()
+    while local_state.game_length > 0:
+        if local_state.timer_state:
+            if local_state.game_length in range(
+                *initial_state.bucket_interval_upper
+            ) or local_state.game_length in range(*initial_state.bucket_interval_lower):
+                if not local_state.cap_state:
+                    local_state.update_team()
+                    local_state.cap_state = True
+            else:
+                if local_state.cap_state:
+                    RGBS.update(delay=0.0025)
+                    local_state.cap_state = False
+            if local_state.cap_state:
+                if REDB.fell and local_state.team != "Red":
+                    local_state.update_team("Red", delay=0.0025)
+                elif BLUEB.fell and local_state.team != "Blue":
+                    local_state.update_team("Blue", delay=0.0025)
+            if monotonic() - clock >= 1:
+                local_state.game_length -= 1
+                if local_state.cap_state:
+                    if local_state.team == "Red":
+                        local_state.red_time += 1
+                    elif local_state.team == "Blue":
+                        local_state.blue_time += 1
+                display_message(
+                    f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+                )
+                clock = monotonic()
+        if ENCB.short_count > 1:
+            local_state.timer_state = not local_state.timer_state
+        if ENCB.long_press:
+            display_message("exiting...")
+            await sleep(0.5)
+            break
+        await sleep(0)
+    display_message(
+        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+    )
+    if local_state.red_time > local_state.blue_time:
+        local_state.update_team("Red", delay=0.0025)
+    elif local_state.blue_time > local_state.red_time:
+        local_state.update_team("Blue", delay=0.0025)
+    else:
+        local_state.update_team("Green", delay=0.0025)
+    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+
+    while True:
+        if ENCB.short_count > 0:
+            break
+        await sleep(0)
+    await sleep(0.1)
+    await game_mode.restart()
+
+
+async def start_crazykingw(game_mode):
+    """Function for DoorDash/moving KotH game mode, wireless version"""
+    local_state = initial_state.shallow_copy()
+    await sleep(0.5)
+    message = b"empty"
+    msg_dec = message.decode()
+    display_message("Waiting for timer...")
+    while True:
+        if e:
+            msg = e.read()
+            if msg.msg is not None and msg.msg != message:
+                message = msg.msg
+                msg_dec = message.decode()
+                if msg_dec == "Start":
+                    await sleep(6)
+                    break
+        if ENCB.short_count > 1:
+            break
+        await sleep(0)
+    display_message(
+        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+    )
+    local_state.update_team()
+    clock = monotonic()
+    while True:
+        if local_state.timer_state:
+            if local_state.cap_state:
+                if REDB.fell and local_state.team != "Red":
+                    local_state.update_team("Red", delay=0.0025)
+                elif BLUEB.fell and local_state.team != "Blue":
+                    local_state.update_team("Blue", delay=0.0025)
+            if monotonic() - clock >= 1:
+                if local_state.cap_state:
+                    if local_state.team == "Red":
+                        local_state.red_time += 1
+                    elif local_state.team == "Blue":
+                        local_state.blue_time += 1
+                display_message(
+                    f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+                )
+                clock = monotonic()
+        if ENCB.short_count > 1:
+            local_state.timer_state = not local_state.timer_state
+        if ENCB.long_press:
+            display_message("exiting...")
+            await sleep(0.5)
+            break
+        if e:
+            msg = e.read()
+            if msg is not None and msg != message:
+                print(msg.msg)
+                message = msg.msg
+                msg_dec = message.decode()
+                if msg_dec == "Pause":
+                    local_state.timer_state = False
+                    RGBS.update("Purple", delay=0.0025)
+                elif msg_dec == "Resume":
+                    local_state.timer_state = True
+                    if local_state.cap_state:
+                        RGBS.update(local_state.team, delay=0.0025)
+                    else:
+                        RGBS.update(delay=0.0025)
+                elif msg_dec == "Active":
+                    local_state.cap_state = True
+                    local_state.update_team()
+                    await sleep(0.1)
+                elif msg_dec == "Inactive":
+                    local_state.cap_state = False
+                    RGBS.update(delay=0.0025)
+                elif msg_dec == "End":
+                    break
+        await sleep(0)
+    display_message(
+        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+    )
+    if local_state.red_time > local_state.blue_time:
+        local_state.update_team("Red", delay=0.0025)
+    elif local_state.blue_time > local_state.red_time:
+        local_state.update_team("Blue", delay=0.0025)
+    else:
+        local_state.update_team("Green", delay=0.0025)
+    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+    while True:
+        if ENCB.short_count > 0:
+            break
+        await sleep(0)
+    await sleep(0.1)
+    await game_mode.restart()
+
+
 async def start_domination(game_mode):
     """Function for Domination game mode"""
     local_state = initial_state.shallow_copy()
@@ -523,158 +675,6 @@ async def start_territories(game_mode):
             break
         await sleep(0)
     display_message(f"{local_state.team} Team\nPoint Locked")
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    while True:
-        if ENCB.short_count > 0:
-            break
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
-async def start_crazyking(game_mode):
-    """Function for DoorDash/moving KotH game mode"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    display_message(
-        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
-    clock = monotonic()
-    while local_state.game_length > 0:
-        if local_state.timer_state:
-            if local_state.game_length in range(
-                *initial_state.bucket_interval_upper
-            ) or local_state.game_length in range(*initial_state.bucket_interval_lower):
-                if not local_state.cap_state:
-                    local_state.update_team()
-                    local_state.cap_state = True
-            else:
-                if local_state.cap_state:
-                    RGBS.update(delay=0.0025)
-                    local_state.cap_state = False
-            if local_state.cap_state:
-                if REDB.fell and local_state.team != "Red":
-                    local_state.update_team("Red", delay=0.0025)
-                elif BLUEB.fell and local_state.team != "Blue":
-                    local_state.update_team("Blue", delay=0.0025)
-            if monotonic() - clock >= 1:
-                local_state.game_length -= 1
-                if local_state.cap_state:
-                    if local_state.team == "Red":
-                        local_state.red_time += 1
-                    elif local_state.team == "Blue":
-                        local_state.blue_time += 1
-                display_message(
-                    f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-                )
-                clock = monotonic()
-        if ENCB.short_count > 1:
-            local_state.timer_state = not local_state.timer_state
-        if ENCB.long_press:
-            display_message("exiting...")
-            await sleep(0.5)
-            break
-        await sleep(0)
-    display_message(
-        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
-    if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", delay=0.0025)
-    elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", delay=0.0025)
-    else:
-        local_state.update_team("Green", delay=0.0025)
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-
-    while True:
-        if ENCB.short_count > 0:
-            break
-        await sleep(0)
-    await sleep(0.1)
-    await game_mode.restart()
-
-
-async def start_crazykingw(game_mode):
-    """Function for DoorDash/moving KotH game mode"""
-    local_state = initial_state.shallow_copy()
-    await sleep(0.5)
-    message = b"empty"
-    msg_dec = message.decode()
-    display_message("Waiting for timer...")
-    while True:
-        if e:
-            msg = e.read()
-            if msg.msg is not None and msg.msg != message:
-                message = msg.msg
-                msg_dec = message.decode()
-                if msg_dec == "Start":
-                    await sleep(6)
-                    break
-        if ENCB.short_count > 1:
-            break
-        await sleep(0)
-    display_message(
-        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
-    local_state.update_team()
-    clock = monotonic()
-    while True:
-        if local_state.timer_state:
-            if local_state.cap_state:
-                if REDB.fell and local_state.team != "Red":
-                    local_state.update_team("Red", delay=0.0025)
-                elif BLUEB.fell and local_state.team != "Blue":
-                    local_state.update_team("Blue", delay=0.0025)
-            if monotonic() - clock >= 1:
-                if local_state.cap_state:
-                    if local_state.team == "Red":
-                        local_state.red_time += 1
-                    elif local_state.team == "Blue":
-                        local_state.blue_time += 1
-                display_message(
-                    f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-                )
-                clock = monotonic()
-        if ENCB.short_count > 1:
-            local_state.timer_state = not local_state.timer_state
-        if ENCB.long_press:
-            display_message("exiting...")
-            await sleep(0.5)
-            break
-        if e:
-            msg = e.read()
-            if msg is not None and msg != message:
-                print(msg.msg)
-                message = msg.msg
-                msg_dec = message.decode()
-                if msg_dec == "Pause":
-                    local_state.timer_state = False
-                    RGBS.update("Purple", delay=0.0025)
-                elif msg_dec == "Resume":
-                    local_state.timer_state = True
-                    if local_state.cap_state:
-                        RGBS.update(local_state.team, delay=0.0025)
-                    else:
-                        RGBS.update(delay=0.0025)
-                elif msg_dec == "Active":
-                    local_state.cap_state = True
-                    local_state.update_team()
-                    await sleep(0.1)
-                elif msg_dec == "Inactive":
-                    local_state.cap_state = False
-                    RGBS.update(delay=0.0025)
-                elif msg_dec == "End":
-                    break
-        await sleep(0)
-    display_message(
-        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
-    )
-    if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", delay=0.0025)
-    elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", delay=0.0025)
-    else:
-        local_state.update_team("Green", delay=0.0025)
     RGBS.update(local_state.team, "chase_on_off", repeat=-1)
     while True:
         if ENCB.short_count > 0:
@@ -934,11 +934,11 @@ MODES = [
         has_cap_length=True,
         has_checkpoint=True,
     ),
+    GameMode("Crazy King", has_id=True, has_game_length=True),
+    GameMode("Crazy King W", has_id=True),
     GameMode("Domination", has_game_length=True),
     GameMode("Lockout", has_game_length=True),
     GameMode("Territories", has_game_length=True),
-    GameMode("Crazy King", has_id=True, has_game_length=True),
-    GameMode("Crazy King W", has_id=True),
 ]
 # endregion
 """

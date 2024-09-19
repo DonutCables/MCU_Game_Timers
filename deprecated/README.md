@@ -1,0 +1,2 @@
+# Deprecated codebase
+Here is where all my deprecated code versions live. These are versions that I have moved on from, but still want to keep around for reference. They are not guaranteed to work, and may be missing features or have bugs. They are also not maintained, and I will not be fixing any issues with them. If you want to use them, you are on your own.

@@ -600,6 +600,8 @@ async def start_kothw(game_mode):
     """Function for Domination game mode"""
     local_state = initial_state.shallow_copy()
     await sleep(0.5)
+    message = b"empty"
+    msg_dec = message.decode()
     display_message("Waiting for timer...")
     while True:
         if e:

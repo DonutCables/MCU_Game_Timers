@@ -983,11 +983,5 @@ if ENCB.value:
     if __name__ == "__main__":
         run(main())
 else:
-    import mdns
-    import wifi
-
-    server = mdns.Server(wifi.radio)
-    hostname = getenv("CIRCUITPY_WEB_INSTANCE_NAME")
-    server.hostname = hostname
     pass
 # endregion

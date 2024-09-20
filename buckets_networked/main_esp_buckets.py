@@ -720,6 +720,7 @@ class GameMode:
             3: f"{self.name} Ready\n{initial_state.team} {initial_state.game_length_str} {initial_state.cap_length_str}",
             4: f"{self.name}\nReady Team {initial_state.team}",
             5: f"{self.name} Ready\n{initial_state.game_length_str} {initial_state.bucket_id}",
+            6: f"{self.name}\nReady",
         }
         message = 2
         if self.has_lives:
@@ -733,6 +734,8 @@ class GameMode:
                 message = 4
         elif self.has_game_length:
             message = 2
+        else:
+            message = 6
         return self.display_messages[message]
 
     async def game_setup(self):
@@ -979,5 +982,11 @@ if ENCB.value:
     if __name__ == "__main__":
         run(main())
 else:
+    import mdns
+    import wifi
+
+    server = mdns.Server(wifi.radio)
+    hostname = getenv("CIRCUITPY_WEB_INSTANCE_NAME")
+    server.hostname = hostname
     pass
 # endregion

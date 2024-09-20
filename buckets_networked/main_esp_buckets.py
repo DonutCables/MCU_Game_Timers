@@ -938,8 +938,9 @@ MODES = [
         has_checkpoint=True,
     ),
     GameMode("Crazy King", has_id=True, has_game_length=True),
-    GameMode("Crazy King W", has_id=True),
+    GameMode("Crazy King W"),
     GameMode("Domination", has_game_length=True),
+    GameMode("KOTH W"),
     GameMode("Lockout", has_game_length=True),
     GameMode("Territories", has_game_length=True),
 ]

@@ -780,6 +780,7 @@ class GameMode:
         has_cap_length=False,
         has_checkpoint=False,
         has_loop=False,
+        has_timerbox=False,
     ):
         self.name = name
         self.has_lives = has_lives
@@ -789,6 +790,7 @@ class GameMode:
         self.has_cap_length = has_cap_length
         self.has_checkpoint = has_checkpoint
         self.has_loop = has_loop
+        self.has_timerbox = has_timerbox
         self.final_func_str = f"start_{self.name.replace(' ', '').lower()}"
 
     def set_message(self):
@@ -798,7 +800,7 @@ class GameMode:
             3: f"{self.name} Ready\n{initial_state.team} {initial_state.game_length_str} {initial_state.cap_length_str}",
             4: f"{self.name}\nReady Team {initial_state.team}",
             5: f"{self.name} Ready\n{initial_state.game_length_str} {initial_state.bucket_id}",
-            6: f"{self.name}\nReady",
+            6: f"{self.name}\nReady w TimerBox",
         }
         message = 2
         if self.has_lives:
@@ -812,7 +814,7 @@ class GameMode:
                 message = 4
         elif self.has_game_length:
             message = 2
-        else:
+        elif self.has_timerbox:
             message = 6
         return self.display_messages[message]
 
@@ -825,6 +827,8 @@ class GameMode:
             await self.team_screen()
         if self.has_game_length:
             await self.timer_screen()
+        if self.has_timerbox:
+            await self.tbcheck_screen()
         await self.standby_screen()
 
     async def counter_screen(self):
@@ -942,6 +946,16 @@ class GameMode:
                 await sleep(0)
         await sleep(0)
 
+    async def tbcheck_screen(self):
+        """Screen for checking if the TimerBox is ready"""
+        await sleep(0.5)
+        display_message(f"{self.name} \nUses TimerBox")
+        while True:
+            if ENCB.short_count > 0:
+                break
+            await sleep(0)
+        await sleep(0)
+
     async def standby_screen(self):
         """
         Pre-game confirmation screen.
@@ -1016,9 +1030,9 @@ MODES = [
         has_checkpoint=True,
     ),
     GameMode("Crazy King", has_id=True, has_game_length=True),
-    GameMode("Crazy King W"),
+    GameMode("Crazy King W", has_timerbox=True),
     GameMode("Domination", has_game_length=True),
-    GameMode("KOTH W"),
+    GameMode("KOTH W", has_timerbox=True),
     GameMode("Lockout", has_game_length=True),
     GameMode("Territory", has_game_length=True),
 ]

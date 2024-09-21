@@ -144,7 +144,7 @@ class Game_States:
     def update_team(
         self,
         team="Green",
-        pattern="chase",
+        pattern="fill",
         delay=0.005,
         hold=False,
     ):
@@ -153,7 +153,7 @@ class Game_States:
         RED_LED.value = "Red" in team
         BLUE_LED.value = "Blue" in team
         print(team)
-        RGBS.update(team, pattern, delay, hold=hold)
+        RGBS.update(color1=team, pattern=pattern, delay=delay, hold=hold)
 
     def reset(self):
         """Resets all state variables to their initial values"""
@@ -217,7 +217,7 @@ initial_state = Game_States()
 ENCS = ENC_States()
 # SOUND = Sound_Control(AUDIO_OUT)
 RGB = RGB_Control(RGB_LED)
-RGBS = RGB_Settings()
+RGBS = RGB_Settings(RGB)
 
 # endregion
 """
@@ -289,7 +289,7 @@ async def start_attrition(game_mode):
         if REDB.short_count > 0 or BLUEB.short_count > 0:
             local_state.lives_count -= 1
             display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
-            RGBS.update(local_state.team, "chase_off_on", 0.001)
+            RGBS.update(color2=local_state.team, pattern="fill_cycle", delay=0.001)
             await sleep(0)
         if REDB.long_press or BLUEB.long_press:
             local_state.lives_count = min(
@@ -303,7 +303,9 @@ async def start_attrition(game_mode):
             break
         await sleep(0)
     display_message(f"{local_state.team} Lives Left\n{local_state.lives_count}")
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+    RGBS.update(
+        color1=local_state.team, color2="Green", pattern="fill_cycle", repeat=-1
+    )
     while True:
         if ENCB.short_count > 0:
             break
@@ -324,7 +326,7 @@ async def start_deathclicks(game_mode):
             display_message(
                 f"{local_state.team} team\nDeaths {local_state.lives_count}"
             )
-            RGBS.update(local_state.team, "chase_off_on", 0.001)
+            RGBS.update(color2=local_state.team, pattern="fill_cycle", delay=0.001)
             await sleep(0)
         if REDB.long_press or BLUEB.long_press:
             local_state.lives_count = max(0, local_state.lives_count - 1)
@@ -376,13 +378,11 @@ async def start_control(game_mode):
         await sleep(0)
     if local_state.cap_length == 0:
         display_message(f"{game_mode.name} {local_state.cap_length_str}\nPoint Locked")
+        RGBS.update(color1=local_state.team, pattern="fill_cycle", repeat=-1)
     else:
         display_message(
             f"{game_mode.name} {local_state.game_length_str}\n{local_state.team} {local_state.cap_length_str}"
         )
-    if local_state.cap_length == 0:
-        RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-    else:
         RGBS.update()
     while True:
         if ENCB.short_count > 0:
@@ -443,9 +443,10 @@ async def start_crazyking(game_mode):
     elif local_state.blue_time > local_state.red_time:
         local_state.update_team("Blue", delay=0.0025)
     else:
-        local_state.update_team("Green", delay=0.0025)
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
-
+        local_state.update_team("Purple", delay=0.0025)
+    RGBS.update(
+        color1=local_state.team, color2="Green", pattern="fill_cycle", repeat=-1
+    )
     while True:
         if ENCB.short_count > 0:
             break
@@ -462,6 +463,7 @@ async def start_crazykingw(game_mode):
     msg_dec = message.decode()
     display_message("Waiting for timer...")
     while True:
+        local_state.update_team(pattern="single_blink_cycle", delay=0.1)
         if e:
             msg = e.read()
             if msg.msg is not None and msg.msg != message:
@@ -476,8 +478,10 @@ async def start_crazykingw(game_mode):
     display_message(
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
+    await sleep(0)
     local_state.update_team()
     clock = monotonic()
+    await sleep(0)
     while True:
         if local_state.timer_state:
             if local_state.cap_state:
@@ -509,7 +513,7 @@ async def start_crazykingw(game_mode):
                 msg_dec = message.decode()
                 if msg_dec == "Pause":
                     local_state.timer_state = False
-                    RGBS.update("Purple", delay=0.0025)
+                    RGBS.update("Yellow", delay=0.0025)
                 elif msg_dec == "Resume":
                     local_state.timer_state = True
                     if local_state.cap_state:
@@ -534,8 +538,10 @@ async def start_crazykingw(game_mode):
     elif local_state.blue_time > local_state.red_time:
         local_state.update_team("Blue", delay=0.0025)
     else:
-        local_state.update_team("Green", delay=0.0025)
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+        local_state.update_team("Purple", delay=0.0025)
+    RGBS.update(
+        color1=local_state.team, color2="Green", pattern="fill_cycle", repeat=-1
+    )
     while True:
         if ENCB.short_count > 0:
             break
@@ -586,8 +592,10 @@ async def start_domination(game_mode):
     elif local_state.blue_time > local_state.red_time:
         local_state.update_team("Blue", delay=0.0025)
     else:
-        local_state.update_team("Green", delay=0.0025)
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+        local_state.update_team("Purple", delay=0.0025)
+    RGBS.update(
+        color1=local_state.team, color2="Green", pattern="fill_cycle", repeat=-1
+    )
     while True:
         if ENCB.short_count > 0:
             break
@@ -603,6 +611,7 @@ async def start_kothw(game_mode):
     message = b"empty"
     msg_dec = message.decode()
     display_message("Waiting for timer...")
+    RGBS.update(color1=local_state.team, pattern="single_blink_cycle", repeat=-1)
     while True:
         if e:
             msg = e.read()
@@ -618,8 +627,10 @@ async def start_kothw(game_mode):
     display_message(
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
+    await sleep(0)
     local_state.update_team()
     clock = monotonic()
+    await sleep(0)
     while True:
         if local_state.timer_state:
             if REDB.pressed and local_state.team != "Red":
@@ -649,7 +660,7 @@ async def start_kothw(game_mode):
                 msg_dec = message.decode()
                 if msg_dec == "Pause":
                     local_state.timer_state = False
-                    RGBS.update("Purple", delay=0.0025)
+                    RGBS.update("Yellow", delay=0.0025)
                 elif msg_dec == "Resume":
                     local_state.timer_state = True
                     RGBS.update(local_state.team, delay=0.0025)
@@ -664,8 +675,10 @@ async def start_kothw(game_mode):
     elif local_state.blue_time > local_state.red_time:
         local_state.update_team("Blue", delay=0.0025)
     else:
-        local_state.update_team("Green", delay=0.0025)
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+        local_state.update_team("Purple", delay=0.0025)
+    RGBS.update(
+        color1=local_state.team, color2="Green", pattern="fill_cycle", repeat=-1
+    )
     while True:
         if ENCB.short_count > 0:
             break
@@ -710,7 +723,7 @@ async def start_lockout(game_mode):
     display_message(
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+    RGBS.update(color1=local_state.team, pattern="fill_cycle", repeat=-1)
     while True:
         if ENCB.short_count > 0:
             break
@@ -753,7 +766,7 @@ async def start_territory(game_mode):
             break
         await sleep(0)
     display_message(f"{local_state.team} Team\nPoint Locked")
-    RGBS.update(local_state.team, "chase_on_off", repeat=-1)
+    RGBS.update(color1=local_state.team, pattern="fill_cycle", repeat=-1)
     while True:
         if ENCB.short_count > 0:
             break

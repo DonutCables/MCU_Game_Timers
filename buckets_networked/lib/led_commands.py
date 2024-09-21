@@ -10,6 +10,7 @@ class RGB_Control:
 
     def __init__(self, rgb: NeoPixel):
         self.rgb = rgb
+        self.loop = False
 
     COLOR = {
         "Red": (255, 0, 0),
@@ -18,84 +19,94 @@ class RGB_Control:
         "Green": (0, 255, 0),
         "Blue": (0, 0, 255),
         "Purple": (255, 0, 255),
+        "White": (255, 255, 255),
         "Off": (0, 0, 0),
     }
 
-    async def solid(self, color, delay):
+    def stop(self):
+        """Stop the RGB loop"""
+        self.loop = False
+
+    def start(self):
+        """Start the RGB loop"""
+        self.loop = True
+
+    async def solid(self, color1, color2, delay):
         """Set the LED to a solid color"""
-        self.rgb.fill(self.COLOR[color])
+        self.rgb.fill(self.COLOR[color1])
         self.rgb.show()
 
-    async def chase(self, color, delay):
-        """Chase the LED with a specific color and delay"""
+    async def fill(self, color1, color2, delay):
+        """Fill the LED with a specific color and delay"""
         for i in range(self.rgb.n):
-            self.rgb[i] = self.COLOR[color]
-            await sleep(delay)
+            self.rgb[i] = self.COLOR[color1]
             self.rgb.show()
+            await sleep(delay)
             await sleep(0)
+            if not self.loop:
+                break
 
-    async def chase_off_on(self, color, delay):
-        """Chase from off to the selected color"""
-        await self.chase("Off", delay)
-        await self.chase(color, delay)
+    async def fill_cycle(self, color1, color2, delay):
+        """Fill one color then the other"""
+        await self.fill(color1, color2, delay)
+        await self.fill(color2, color1, delay)
 
-    async def chase_on_off(self, color, delay):
-        """Chase from the selected color to off"""
-        await self.chase(color, delay)
-        await self.chase("Off", delay)
-
-    async def single_blink_on_off(self, color, delay):
+    async def single_blink_cycle(self, color1, color2, delay):
         """Blink a single LED on at a time"""
         for i in range(self.rgb.n):
-            self.rgb[i] = self.COLOR[color]
+            self.rgb[i] = self.COLOR[color1]
             self.rgb.show()
             await sleep(delay)
-            self.rgb[i] = self.COLOR["Off"]
+            self.rgb[i] = self.COLOR[color2]
             self.rgb.show()
             await sleep(delay)
+            if not self.loop:
+                break
 
-    async def single_blink_off_on(self, color, delay):
-        """Blink a single LED off at a time"""
-        for i in range(self.rgb.n):
-            self.rgb[i] = self.COLOR["Off"]
-            self.rgb.show()
-            await sleep(delay)
-            self.rgb[i] = self.COLOR[color]
-            self.rgb.show()
-            await sleep(delay)
-
-    async def all_blink(self, color, delay):
-        """Blink all LEDs simultaneously"""
-        self.rgb.fill(self.COLOR[color])
-        self.rgb.show()
+    async def solid_blink(self, color1, color2, delay):
+        """Blink all LEDs simultaneously, up to two colors"""
+        await self.solid(color1, color2, delay)
         await sleep(delay)
-        self.rgb.fill(self.COLOR["Off"])
-        self.rgb.show()
+        await self.solid(color2, color1, delay)
         await sleep(delay)
 
 
 class RGB_Settings:
     """Class to hold and update RGB setting state"""
 
-    def __init__(self):
-        self.color = "Off"
-        self.pattern = "chase"
+    def __init__(self, rgb):
+        self.color1 = "Off"
+        self.color2 = "Off"
+        self.pattern = "fill"
         self.delay = 0.005
         self.repeat = 0
         self.hold = False
+        self.rgb = rgb
 
     def state(self):
         return {
-            "color": self.color,
+            "color1": self.color1,
+            "color2": self.color2,
             "pattern": self.pattern,
             "delay": self.delay,
             "repeat": self.repeat,
             "hold": self.hold,
+            "rgb": self.rgb,
         }
 
-    def update(self, color="Off", pattern="chase", delay=0.005, repeat=1, hold=False):
+    def update(
+        self,
+        color1="Off",
+        color2="Off",
+        pattern="fill",
+        delay=0.005,
+        repeat=1,
+        hold=False,
+    ):
         """Update the RGB settings"""
-        self.color = color
+        self.rgb.stop()
+        self.color1 = color1
+        self.color2 = color2
         self.pattern = pattern
         self.delay = delay
         self.repeat = repeat
@@ -104,12 +115,21 @@ class RGB_Settings:
     async def rgb_control(self, rgb):
         """Async function for controlling RGB LEDs"""
         while True:
-            if self.repeat > 0 or self.repeat == -1:
-                pattern = getattr(rgb, self.pattern, "chase")
+            while self.repeat == -1:
+                self.rgb.start()
+                pattern = getattr(rgb, self.pattern, "fill")
                 if callable(pattern):
-                    await pattern(self.color, self.delay)
-                if self.repeat > 0:
-                    self.repeat -= 1
-                    if self.repeat == 0:
-                        self.hold = False
+                    await pattern(self.color1, self.color2, self.delay)
+                self.rgb.stop
+                await sleep(0)
+            while self.repeat > 0:
+                self.rgb.start()
+                self.repeat -= 1
+                pattern = getattr(rgb, self.pattern, "fill")
+                if callable(pattern):
+                    await pattern(self.color1, self.color2, self.delay)
+                self.rgb.stop()
+                if self.repeat == 0:
+                    self.hold = False
+                await sleep(0)
             await sleep(0)

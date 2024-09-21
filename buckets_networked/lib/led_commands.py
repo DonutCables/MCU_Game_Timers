@@ -120,7 +120,7 @@ class RGB_Settings:
                 pattern = getattr(rgb, self.pattern, "fill")
                 if callable(pattern):
                     await pattern(self.color1, self.color2, self.delay)
-                self.rgb.stop
+                self.rgb.stop()
                 await sleep(0)
             while self.repeat > 0:
                 self.rgb.start()

@@ -462,8 +462,8 @@ async def start_crazykingw(game_mode):
     message = b"empty"
     msg_dec = message.decode()
     display_message("Waiting for timer...")
+    RGBS.update(color1=local_state.team, pattern="single_blink_cycle", repeat=-1)
     while True:
-        local_state.update_team(pattern="single_blink_cycle", delay=0.1)
         if e:
             msg = e.read()
             if msg.msg is not None and msg.msg != message:
@@ -723,7 +723,9 @@ async def start_lockout(game_mode):
     display_message(
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
-    RGBS.update(color1=local_state.team, pattern="fill_cycle", repeat=-1)
+    RGBS.update(
+        color1=local_state.team, color2="Green", pattern="fill_cycle", repeat=-1
+    )
     while True:
         if ENCB.short_count > 0:
             break

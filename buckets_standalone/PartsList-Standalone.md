@@ -1,4 +1,4 @@
-# Preliminary Parts List
+# Preliminary Parts List - Standalone Version
 Parts are listed on a per-timer basis. Prices are tax and shipping exclusive.
 Current price breakdown gives about $64 per bucket.
 

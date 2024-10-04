@@ -44,8 +44,10 @@ https://www.aliexpress.com/p/wishlist/shareReflux.html?groupId=wIt%2Bhup2qP6fPVA
 ---
 
  - Wire - I like 22ga silicone that you can get multi-packs of for pretty cheap
+ - "Wagos"/lever nuts - Great for connecting wires together without soldering, especially for the power connections
  - Heatshrink - For any soldered connections
  - Header wires - https://www.microcenter.com/product/613879/inland-dupont-jumper-wire-20cm-3-pack - Can do most hookup aside from power with just a pack of these if you wanted.
+ - Battery retention - I use a velcro loop under the outlet box to hold the battery and it works well enough
  - Some screws - The printed panel I use screws directly into the electrical box. I put some M3 heatsets in there for ease, but any close-enough screw should work. 
 
 ### Future Hardware Additions

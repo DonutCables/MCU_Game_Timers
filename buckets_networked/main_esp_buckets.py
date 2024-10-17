@@ -144,8 +144,10 @@ class Game_States:
     def update_team(
         self,
         team="Green",
+        color2="Off",
         pattern="fill",
         delay=0.005,
+        repeat=1,
         hold=False,
     ):
         """Updates button LED and RGB state based on team"""
@@ -153,7 +155,7 @@ class Game_States:
         RED_LED.value = "Red" in team
         BLUE_LED.value = "Blue" in team
         print(team)
-        RGBS.update(color1=team, pattern=pattern, delay=delay, hold=hold)
+        RGBS.update(team, color2, pattern, delay, repeat, hold)
 
     def reset(self):
         """Resets all state variables to their initial values"""
@@ -439,11 +441,11 @@ async def start_crazyking(game_mode):
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", delay=0.0025)
+        local_state.update_team("Red", "Green", "fill_cycle", 0.0025, -1)
     elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", delay=0.0025)
+        local_state.update_team("Blue", "Green", "fill_cycle", 0.0025, -1)
     else:
-        local_state.update_team("Purple", delay=0.0025)
+        local_state.update_team("Purple", "Green", "fill_cycle", 0.0025, -1)
     RGBS.update(
         color1=local_state.team, color2="Green", pattern="fill_cycle", repeat=-1
     )
@@ -534,14 +536,11 @@ async def start_crazykingw(game_mode):
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", delay=0.0025)
+        local_state.update_team("Red", "Green", "fill_cycle", 0.0025, -1)
     elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", delay=0.0025)
+        local_state.update_team("Blue", "Green", "fill_cycle", 0.0025, -1)
     else:
-        local_state.update_team("Purple", delay=0.0025)
-    RGBS.update(
-        color1=local_state.team, color2="Green", pattern="fill_cycle", repeat=-1
-    )
+        local_state.update_team("Purple", "Green", "fill_cycle", 0.0025, -1)
     while True:
         if ENCB.short_count > 0:
             break
@@ -588,14 +587,11 @@ async def start_domination(game_mode):
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", delay=0.0025)
+        local_state.update_team("Red", "Green", "fill_cycle", 0.0025, -1)
     elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", delay=0.0025)
+        local_state.update_team("Blue", "Green", "fill_cycle", 0.0025, -1)
     else:
-        local_state.update_team("Purple", delay=0.0025)
-    RGBS.update(
-        color1=local_state.team, color2="Green", pattern="fill_cycle", repeat=-1
-    )
+        local_state.update_team("Purple", "Green", "fill_cycle", 0.0025, -1)
     while True:
         if ENCB.short_count > 0:
             break
@@ -671,14 +667,11 @@ async def start_kothw(game_mode):
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", delay=0.0025)
+        local_state.update_team("Red", "Green", "fill_cycle", 0.0025, -1)
     elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", delay=0.0025)
+        local_state.update_team("Blue", "Green", "fill_cycle", 0.0025, -1)
     else:
-        local_state.update_team("Purple", delay=0.0025)
-    RGBS.update(
-        color1=local_state.team, color2="Green", pattern="fill_cycle", repeat=-1
-    )
+        local_state.update_team("Purple", "Green", "fill_cycle", 0.0025, -1)
     while True:
         if ENCB.short_count > 0:
             break
@@ -1029,7 +1022,7 @@ class GameMode:
     async def run_final_function(self):
         final_func = globals().get(self.final_func_str, None)
         if callable(final_func):
-            await final_func(self)
+            await final_func(self)  # type: ignore
         else:
             print(f"Function {self.final_func_str} not found")
 

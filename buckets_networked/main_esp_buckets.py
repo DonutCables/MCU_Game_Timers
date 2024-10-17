@@ -1116,6 +1116,7 @@ MODES = [
     GameMode("Crazy King", has_id=True, has_game_length=True),
     GameMode("Crazy King W", has_timerbox=True),
     GameMode("Domination", has_game_length=True),
+    GameMode("Domination W", has_timerbox=True),
     GameMode("KOTH W", has_timerbox=True),
     GameMode("Lockout", has_game_length=True),
     GameMode("Territory", has_game_length=True),

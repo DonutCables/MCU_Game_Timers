@@ -480,7 +480,6 @@ async def start_crazykingw(game_mode):
     display_message(
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
-    await sleep(0)
     local_state.update_team()
     clock = monotonic()
     await sleep(0)
@@ -553,8 +552,6 @@ async def start_domination(game_mode):
     """Function for Domination game mode"""
     local_state = initial_state.shallow_copy()
     await sleep(0.5)
-    local_state.red_time = 0
-    local_state.blue_time = 0
     display_message(
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
@@ -582,6 +579,85 @@ async def start_domination(game_mode):
             display_message("exiting...")
             await sleep(0.5)
             break
+        await sleep(0)
+    display_message(
+        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+    )
+    if local_state.red_time > local_state.blue_time:
+        local_state.update_team("Red", "Green", "fill_cycle", 0.0025, -1)
+    elif local_state.blue_time > local_state.red_time:
+        local_state.update_team("Blue", "Green", "fill_cycle", 0.0025, -1)
+    else:
+        local_state.update_team("Purple", "Green", "fill_cycle", 0.0025, -1)
+    while True:
+        if ENCB.short_count > 0:
+            break
+        await sleep(0)
+    await sleep(0.1)
+    await game_mode.restart()
+
+
+async def start_dominationw(game_mode):
+    """Function for Domination game mode"""
+    local_state = initial_state.shallow_copy()
+    await sleep(0.5)
+    message = b"empty"
+    msg_dec = message.decode()
+    display_message("Waiting for timer...")
+    RGBS.update(color1=local_state.team, pattern="single_blink_cycle", repeat=-1)
+    while True:
+        if e:
+            msg = e.read()
+            if msg.msg is not None and msg.msg != message:
+                message = msg.msg
+                msg_dec = message.decode()
+                if msg_dec == "Start":
+                    await sleep(6)
+                    break
+        if ENCB.short_count > 1:
+            break
+        await sleep(0)
+    display_message(
+        f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+    )
+    local_state.update_team()
+    clock = monotonic()
+    await sleep(0)
+    while True:
+        if local_state.timer_state:
+            if REDB.long_press and local_state.team != "Red":
+                local_state.update_team("Red", delay=0.0025)
+            elif BLUEB.long_press and local_state.team != "Blue":
+                local_state.update_team("Blue", delay=0.0025)
+            if monotonic() - clock >= 1:
+                if local_state.team == "Red":
+                    local_state.red_time += 1
+                elif local_state.team == "Blue":
+                    local_state.blue_time += 1
+                display_message(
+                    f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
+                )
+                clock = monotonic()
+        if ENCB.short_count > 1:
+            local_state.timer_state = not local_state.timer_state
+        if ENCB.long_press:
+            display_message("exiting...")
+            await sleep(0.5)
+            break
+        if e:
+            msg = e.read()
+            if msg is not None and msg != message:
+                print(msg.msg)
+                message = msg.msg
+                msg_dec = message.decode()
+                if msg_dec == "Pause":
+                    local_state.timer_state = False
+                    RGBS.update("Yellow", delay=0.0025)
+                elif msg_dec == "Resume":
+                    local_state.timer_state = True
+                    RGBS.update(local_state.team, delay=0.0025)
+                elif msg_dec == "End":
+                    break
         await sleep(0)
     display_message(
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"

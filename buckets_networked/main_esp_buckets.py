@@ -348,7 +348,7 @@ async def start_control(game_mode):
     display_message(
         f"{game_mode.name} {local_state.game_length_str}\n{local_state.team} {local_state.cap_length_str}"
     )
-    RGBS.update("Green")
+    RGBS.update(color1="Green")
     clock = monotonic()
     while (local_state.game_length > 0 and not local_state.cap_state) or (
         local_state.cap_length > 0 and local_state.cap_state
@@ -359,10 +359,10 @@ async def start_control(game_mode):
                 local_state.cap_length = (
                     (local_state.cap_length - 1) // local_state.checkpoint + 1
                 ) * local_state.checkpoint
-                RGBS.update("Green", delay=0.001)
+                RGBS.update(color1="Green", delay=0.001)
             if REDB.fell or BLUEB.fell:
                 local_state.cap_state = True
-                RGBS.update(local_state.team, delay=0.001)
+                RGBS.update(color1=local_state.team, delay=0.001)
             if monotonic() - clock >= 1:
                 local_state.game_length = max(0, local_state.game_length - 1)
                 if local_state.cap_state:
@@ -416,9 +416,9 @@ async def start_crazyking(game_mode):
                     local_state.cap_state = False
             if local_state.cap_state:
                 if REDB.fell and local_state.team != "Red":
-                    local_state.update_team("Red", delay=0.0025)
+                    local_state.update_team(team="Red", delay=0.0025)
                 elif BLUEB.fell and local_state.team != "Blue":
-                    local_state.update_team("Blue", delay=0.0025)
+                    local_state.update_team(team="Blue", delay=0.0025)
             if monotonic() - clock >= 1:
                 local_state.game_length -= 1
                 if local_state.cap_state:
@@ -441,11 +441,17 @@ async def start_crazyking(game_mode):
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Red", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Blue", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     else:
-        local_state.update_team("Purple", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Purple", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     RGBS.update(
         color1=local_state.team, color2="Green", pattern="fill_cycle", repeat=-1
     )
@@ -535,11 +541,17 @@ async def start_crazykingw(game_mode):
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Red", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Blue", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     else:
-        local_state.update_team("Purple", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Purple", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     while True:
         if ENCB.short_count > 0:
             break
@@ -584,11 +596,17 @@ async def start_domination(game_mode):
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Red", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Blue", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     else:
-        local_state.update_team("Purple", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Purple", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     while True:
         if ENCB.short_count > 0:
             break
@@ -663,11 +681,17 @@ async def start_dominationw(game_mode):
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Red", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Blue", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     else:
-        local_state.update_team("Purple", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Purple", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     while True:
         if ENCB.short_count > 0:
             break
@@ -743,11 +767,17 @@ async def start_kothw(game_mode):
         f"RED:  {local_state.red_time_str}\nBLUE: {local_state.blue_time_str}"
     )
     if local_state.red_time > local_state.blue_time:
-        local_state.update_team("Red", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Red", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     elif local_state.blue_time > local_state.red_time:
-        local_state.update_team("Blue", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Blue", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     else:
-        local_state.update_team("Purple", "Green", "fill_cycle", 0.0025, -1)
+        local_state.update_team(
+            team="Purple", color2="Green", pattern="fill_cycle", delay=0.0025, repeat=-1
+        )
     while True:
         if ENCB.short_count > 0:
             break
@@ -770,9 +800,9 @@ async def start_lockout(game_mode):
     while local_state.red_time > 0 and local_state.blue_time > 0:
         if local_state.timer_state:
             if REDB.long_press and local_state.team != "Red":
-                local_state.update_team("Red", delay=0.0025)
+                local_state.update_team(team="Red", delay=0.0025)
             elif BLUEB.long_press and local_state.team != "Blue":
-                local_state.update_team("Blue", delay=0.0025)
+                local_state.update_team(team="Blue", delay=0.0025)
             if monotonic() - clock >= 1:
                 if local_state.team == "Red":
                     local_state.red_time -= 1
@@ -813,12 +843,12 @@ async def start_territory(game_mode):
     while local_state.game_length > 0:
         if local_state.timer_state:
             if REDB.long_press:
-                local_state.update_team("Red", delay=0.0025)
+                local_state.update_team(team="Red", delay=0.0025)
                 display_message(
                     f"{local_state.team} Team \n{local_state.game_length_str}"
                 )
             elif BLUEB.long_press:
-                local_state.update_team("Blue", delay=0.0025)
+                local_state.update_team(team="Blue", delay=0.0025)
                 display_message(
                     f"{local_state.team} Team \n{local_state.game_length_str}"
                 )
